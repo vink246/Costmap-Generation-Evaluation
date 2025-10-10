@@ -35,8 +35,6 @@ conda activate /scratch/<path_to_env_parent_dir>/costmap_env
 
 > You **must use the full path** when activating environments created outside your home directory.
 
----
-
 #### 4. Install Required Packages
 
 Once activated, install any packages you need, such as PyTorch, OpenCV, etc.
@@ -73,4 +71,81 @@ conda env create --prefix /scratch/<path_to_env_parent_dir>/costmap_env --file c
 
 ```bash
 conda deactivate
+```
+
+## Generating Ground-Truth Costmaps from NYU Depth v2
+
+### Goal
+Convert RGB+D frames into 64×64 continuous **costmaps** where:
+- `0` = free / traversable
+- `1` = untraversable / obstacle
+
+These costmaps will serve as supervised labels for training the costmap predictor models.
+
+### Steps Overview
+
+#### 1. Load and Align Data
+Use NYU Depth v2 RGB and Depth frames (labeled or unlabeled).  
+Ensure RGB and depth are spatially aligned and normalized.
+
+**Input:**  
+- RGB image `(H×W×3)`  
+- Depth map `(H×W)`  
+- Camera intrinsics `(fx, fy, cx, cy)`
+
+#### 2. Back-Project Depth to 3D Points
+Convert each pixel `(u, v, z)` to camera-space coordinates `(x, y, z)` using intrinsics:
+
+```python
+x = (u - cx) * z / fx
+y = (v - cy) * z / fy
+```
+
+This produces a dense **3D point cloud** for the scene.
+
+#### 3. Project to Bird’s-Eye View (BEV)
+Define an egocentric grid (e.g., 6.4×6.4 m) centered on the camera.  
+Each grid cell represents an area in world space (e.g., 10 cm × 10 cm).
+
+Bin 3D points into grid cells based on their `(x, z)` coordinates.
+
+
+#### 4. Compute Traversability Cost
+For each BEV cell, compute geometric statistics:
+- `mean_height`, `max_height`, `height_std`
+- Penalize cells with tall or uneven surfaces.
+
+Example cost formulation:
+```
+cost = sigmoid(a * (max_height - h_thresh)) + b * height_std
+```
+Normalize cost to `[0, 1]`.
+
+
+#### 5. Smooth and Inflate
+Post-process the grid:
+- **Dilation:** Inflate obstacles by the robot’s footprint.
+- **Gaussian blur:** Smooth transitions between free and occupied space.
+
+This yields a **continuous traversability field** instead of binary occupancy.
+
+#### 6. Resize to 64×64
+Downsample or interpolate the BEV grid to a fixed 64×64 resolution.
+
+#### Output
+A costmap:
+- Shape: `64×64`
+- Values in `[0, 1]`
+- Aligned with the camera’s egocentric frame
+
+
+#### Usage
+Each training sample is stored as:
+```
+{ rgb: H×W×4 (4th for depth), costmap: 64×64 }
+```
+
+This dataset can then be used for supervised training of:
+```
+f(RGB + Depth) → Costmap
 ```
