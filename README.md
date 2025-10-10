@@ -67,7 +67,7 @@ and recreate it later with:
 conda env create --prefix /scratch/<path_to_env_parent_dir>/costmap_env --file costmap_env.yml
 ```
 
-#### 8. Deactivate Environment
+#### 7. Deactivate Environment
 
 ```bash
 conda deactivate
