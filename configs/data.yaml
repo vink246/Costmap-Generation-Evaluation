@@ -1,0 +1,57 @@
+roi:
+  width_m: 10.0
+  height_m: 10.0
+  origin:
+  - 0.0
+  - 0.0
+image:
+  resize:
+  - 256
+  - 256
+  normalize:
+    mean:
+    - 0.485
+    - 0.456
+    - 0.406
+    - 0.5
+    std:
+    - 0.229
+    - 0.224
+    - 0.225
+    - 0.25
+costmap:
+  grid:
+  - 64
+  - 64
+  obstacle_threshold_m: 0.2
+  dilation_radius_cells: 2
+  max_depth_m: 30.0
+kitti:
+  root: data\raw\kitti
+  splits:
+    train:
+    - 2011_09_26_drive_0001_sync
+    - 2011_09_26_drive_0002_sync
+    - 2011_09_26_drive_0005_sync
+    - 2011_09_26_drive_0011_sync
+    - 2011_09_26_drive_0013_sync
+    - 2011_09_26_drive_0014_sync
+    - 2011_09_26_drive_0017_sync
+    - 2011_09_26_drive_0018_sync
+    - 2011_09_26_drive_0048_sync
+    - 2011_09_26_drive_0051_sync
+    - 2011_09_26_drive_0056_sync
+    - 2011_09_26_drive_0057_sync
+    - 2011_09_26_drive_0059_sync
+    val:
+    - 2011_09_26_drive_0060_sync
+    - 2011_09_26_drive_0084_sync
+    - 2011_09_26_drive_0091_sync
+    - 2011_09_26_drive_0093_sync
+nyu:
+  root: data/raw/nyu_depth_v2
+  splits:
+    train:
+    - subset_train
+    val:
+    - subset_val

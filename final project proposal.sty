@@ -1,0 +1,59 @@
+\documentclass[11pt,english]{article}
+
+\begin{document}
+
+\title{CS 4644/7643: Deep Learning\\
+Project Proposal}
+\date{Release: September 10, 2025 \\ Due Date: October 1, 2025}
+\maketitle
+
+\textbf{Project Title}: Image-to-Costmap Prediction for Planning
+
+\textbf{Team Members}: Rut Santana, Ibrahim Alshayeb, Vineet Kulkarni, Meera Ranjan
+
+\section{Project Summary}
+
+Robots in unstructured or GPS-denied environments rely on costmaps for safe motion planning. Traditional pipelines fuse SLAM, depth sensors, or geometric heuristics, but these approaches can be brittle, costly, and slow to adapt. We propose an end-to-end approach: a supervised encoder–decoder network that predicts an egocentric costmap directly from RGB+D images. 
+
+Our goal is not only pixel-level accuracy but also whether predicted costmaps enable planners (A*, RRT*) to produce safe, efficient trajectories. We will compare three encoder families (U-Net, transformer, CNN+transformer hybrid) paired with lightweight convolutional decoders producing $64\times64$ costmaps. Evaluation is twofold: perception metrics (MAE, IoU, precision/recall) for map quality, and planning metrics (success rate, collisions, path cost, latency) for operational usefulness. By connecting training objectives to planning outcomes and reporting model size/latency, we aim to recommend architectures that balance accuracy and real-time feasibility.
+
+\section{Related Work}
+
+Recent work shows vision-based encoders can produce navigation-ready maps. TerrainNet (Meng et al., 2023) fuses semantic and geometric cues for traversability and stresses boundary fidelity plus planning-aware metrics, while a simplified U-Net adaptation for Mars rovers (Qiu \& Lloyd, 2025) underscores U-Net’s efficiency. Transformer approaches like Trans4Map (Chen et al., 2022) improve global BEV consistency; camera-only pipelines (Bochare, 2025; Chang et al., 2024) highlight sensitivity to depth errors; and preference-conditioned costmaps (Mao et al., 2025) add flexibility without controlled architectural comparison. In contrast, we focus on fixed traversability costmap prediction and systematically benchmark CNN, transformer, and hybrid encoders under a unified pipeline, evaluating both costmap quality (MAE, IoU, F1, calibration) and planner-level outcomes (success, collisions, path efficiency, latency).
+
+
+\section{Proposed Method}
+
+Our high-level approach is an \emph{encoder-decoder} supervised learning pipeline that maps a forward-facing camera image (RGB+D) to a local 2D costmap usable by a standard planner. We will implement and compare three encoder choices: (1) a CNN encoder (U-Net baseline), (2) a transformer-based encoder (ViT), and (3) a hybrid CNN encoder whose mid-level features are refined by a small transformer block. Each encoder is paired with a lightweight convolutional upsampling decoder that produces a fixed-resolution egocentric costmap. The training loop uses supervised pairs of \{image, ground-truth costmap\} built from existing RGB+D datasets, where depth is projected into a top-down grid. After training, predicted costmaps will be post-processed and used directly as the cost function for planners such as A* on discrete grids and RRT* in continuous space.
+
+The model inputs will be RGB+D images of size $H \times W \times 4$ with depth, normalized with per-channel statistics. In some experiments, we may also stack a short history of frames to provide temporal context. The outputs are dense costmaps $C \in [0,1]^{M \times M}$ (with $M=64$ as a nominal resolution) in the robot’s local frame, where $0$ denotes free space and $1$ denotes untraversable space. We will also support a binary occupancy variant for thresholded evaluations, and optionally a per-cell uncertainty map $\sigma_{i,j}$. The training loss will be a weighted sum of per-pixel regression and structural terms:
+\[
+\mathcal{L} = \lambda_{r}\, \mathcal{L}{\ell_1}(C,\;C^{gt}) \;+\; \lambda{iou}\, \mathcal{L}{\text{IoU}}(C,\;C^{gt}) \;+\; \lambda{b}\, \mathcal{L}_{\text{boundary}}(C,\;C^{gt}),
+\]
+where $\mathcal{L}_{\ell_1}$ is an L1 regression loss on continuous costs, $\mathcal{L}_{\text{IoU}}$ is an IoU or Dice loss emphasizing occupied regions, and $\mathcal{L}_{\text{boundary}}$ penalizes misalignment of obstacle boundaries. For binary experiments we will add a BCE term, and for uncertainty prediction we will add a heteroscedastic NLL term. Evaluation will be both perception-focused (MAE, IoU, precision/recall, F1, calibration if uncertainty is predicted) and planning-focused (success rate, collision rate, path length, cumulative path cost, and planning time). We will also report model size, FLOPs, and latency to assess real-time feasibility.
+
+We expect this method to work because encoder–decoder networks are the standard architecture for dense prediction tasks like segmentation and depth estimation. A U-Net baseline provides strong local feature preservation, while transformer-based encoders incorporate global spatial context useful for long-range traversability reasoning. The chosen loss functions align training with downstream goals: precise obstacle boundaries reduce collisions, while accurate continuous costmaps improve smooth planning.
+
+
+\section{Datasets / Environments}
+
+We will derive costmaps from RGB-D and LiDAR datasets. For outdoor driving, KITTI (raw/split) will provide BEV occupancy grids by projecting depth/LiDAR into an egocentric grid ($10\times10$\,m window). For indoor navigation, NYU Depth v2 offers dense depth to generate local costmaps. Preprocessing standardizes RGB inputs (e.g., $256\times256$) and downsamples costmaps to $64\times64$, applying dilation to encode robot footprint and safety margins. This yields large training sets without manual annotation.
+
+Both datasets support mini-batch training on a single GPU; we will use established splits and optionally test domain mixing for generalization. Planner evaluations will run in simulation only: predicted costmaps feed A* and RRT* planners, enabling reproducible, risk-free comparisons. 
+
+\section{Potential Risks}
+
+Key risks include dataset limitations (domain gap between KITTI/NYU and deployment scenes), projection errors (LiDAR sparsity, depth noise), and computation limits. To mitigate these, we will augment data (lighting/weather), test cross-dataset generalization, apply depth completion/denoising, and analyze planner sensitivity to noisy depth. For compute constraints, we will profile size, FLOPs, and latency, and explore lightweight transformer variants or pruning/quantization. We will validate preprocessing with visual checks and ablation experiments to guard against projection pipeline errors.
+
+\vspace{2ex}
+\begin{thebibliography}{9}
+\itemsep0pt
+\bibitem{Meng2023} Meng, X., et al. (2023). \textit{TerrainNet: Visual Modeling of Complex Terrain for High-speed, Off-road Navigation.}
+\bibitem{Qiu2025} Qiu, R., \& Lloyd, V. (2025). \textit{Reduced Image Classes in Modified U-Net for Mars Rover Navigation.}
+\bibitem{Chen2022} Chen, C., et al. (2022). \textit{Trans4Map: Revisiting Holistic Bird’s-Eye-View Mapping from Egocentric Images to Allocentric Semantics with Vision Transformers.}
+\bibitem{Bochare2025} Bochare, A. (2025). \textit{Camera-Only Bird’s Eye View Perception: A neural approach to LIDAR-Free environmental mapping for autonomous vehicles.}
+\bibitem{Chang2024} Chang, et al. (2024). \textit{BEVMap: Map-Aware BEV Modeling for 3D Perception.}
+\bibitem{Mao2025} Mao, L., et al. (2025). \textit{PACER: Preference-conditioned all-terrain CostMap generation.}
+\end{thebibliography}
+
+\end{document}

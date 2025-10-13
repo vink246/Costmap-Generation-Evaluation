@@ -1,0 +1,19 @@
+out_dir: runs/nyu_vit
+data_root: data/processed
+dataset: nyu
+batch_size: 8
+epochs: 5
+num_workers: 4
+model_module: src.models.vit
+model_class: ViT
+model_kwargs:
+  in_channels: 4
+  out_channels: 1
+  embed_dim: 256
+  depth: 8
+  num_heads: 8
+lr: 0.0005
+loss_weights:
+  l1: 1.0
+  dice: 0.5
+  boundary: 0.1
