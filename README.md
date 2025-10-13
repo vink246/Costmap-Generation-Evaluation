@@ -102,7 +102,7 @@ Planner-based metrics (A*/RRT*) are not included yet. Suggested structure when a
   - Prep script combines both, then splits into `subset_train` and `subset_val` for training/validation
   - Each sample folder contains `rgb/<id>.png` and `depth/<id>.png`
 
-## Proposal-aligned settings
+## Proposal-aligned settings (might change based on instructor/TAs' feedback)
 - ROI: 10m x 10m local egocentric frame
 - Image size: 256 x 256
 - Costmap resolution: 64 x 64
