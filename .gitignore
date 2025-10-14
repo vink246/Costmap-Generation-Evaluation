@@ -18,10 +18,12 @@ Thumbs.db
 
 # Data outputs
 data/processed/
+!data/processed/.gitkeep
 runs/
 
 # Raw data (optional: comment out to track small subsets)
 data/raw/
+!data/raw/.gitkeep
 
 # VSCode
 .vscode/

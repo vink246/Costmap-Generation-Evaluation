@@ -89,6 +89,20 @@ Planner-based metrics (A*/RRT*) are not included yet. Suggested structure when a
 - `src/planning/astar.py`, `src/planning/rrt_star.py`
 - `src/eval/evaluate_planner.py` to run planners on predicted costmaps and report success, collisions, path length, and planning time.
 
+## Sharing data with the team
+Would rather not commit large datasets, so we will use these helper scripts:
+
+- (Rut) Package the local data into zips for sharing:
+  ```powershell
+  .\scripts\pack_data.ps1 -OutDir artifacts
+  # Upload artifacts/kitti_raw.zip, artifacts/nyu_raw.zip, artifacts/processed.zip to OneDrive/Drive/S3
+  ```
+
+- (Teammates) Download/extract with:
+  ```powershell
+  .\scripts\fetch_data.ps1 -KittiZipUrl "<link-to-kitti_raw.zip>" -NyuZipUrl "<link-to-nyu_raw.zip>" -ProcessedZipUrl "<link-to-processed.zip>"
+  ```
+
 ## Dataset details
 
 - **KITTI:**
