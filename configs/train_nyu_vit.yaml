@@ -12,6 +12,7 @@ model_kwargs:
   embed_dim: 256
   depth: 8
   num_heads: 8
+  pretrained: false
 lr: 0.0005
 loss_weights:
   l1: 1.0
