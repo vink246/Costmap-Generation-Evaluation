@@ -1,0 +1,176 @@
+% Milestone Report (Draft)
+% Uses NeurIPS conference template from docs/Styles (as per instructions/rubric in Canvas).
+% Main-text page limit: \textbf{max 5 pages} (references do not count). Appendix allowed \textbf{figures only} -> (as per instructions/rubric in Canvas).
+\documentclass{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{hyperref}
+% Load NeurIPS style from local Styles directory (relative to this file).
+% Choose one of: final | preprint | anonymous; keep nonatbib to use manual bibliography here.
+\usepackage[final,nonatbib]{Styles/neurips_2025}
+\usepackage{xcolor}
+
+	\title{CS 7643 Milestone Report: Learning Costmap Generation from RGB\,\&\,Depth for Mobile Robot Navigation}
+\author{Rut Santana \and Ibrahim Alshayeb \and Vineet Kulkarni \and Meera Ranjan}
+\date{November 2nd, 2025}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We aim to learn traversability costmaps directly from RGB\,+\,Depth images and assess them with both perception metrics and planner-level outcomes. Since the proposal, we implemented the end-to-end data pipeline (NYU and KITTI), dataset loaders, training/evaluation scripts, losses/metrics, and configuration files. This draft summarizes progress, clarifies hypotheses, outlines the methodology, and provides placeholders for preliminary results to be filled by teammates.
+\end{abstract}
+
+\section{Introduction}
+\textbf{Problem \/ Motivation.} Safe autonomous navigation requires reliable costmaps marking free space and obstacles for planners (e.g., A*, RRT*). Classical pipelines generated from depth/LiDAR can be brittle across domains and sensors. We study learning costmaps from RGB\,+\,Depth (RGBD) to improve robustness while preserving planner compatibility.
+
+\textbf{Inputs\/Outputs \/ Training Conditions.} Input is a single RGBD image $I\in\mathbb{R}^{H\times W\times 4}$; output is a local, egocentric costmap $C\in[0,1]^{64\times 64}$. We also evaluate a binarized occupancy map by thresholding $C$. Supervision uses costmaps derived from depth-based heuristics. Optimization uses Adam with a composite objective of L1 and Dice losses (and an optional boundary-aware term).
+
+\textbf{Datasets and splits (paired .npz).} NYU: 523 train, 131 val. KITTI: 438 train, 433 val. All pairs are standardized to 4-channel inputs and $64\times64$ targets.
+
+	\textbf{Goal.} Compare classical depth-to-cost mapping with UNet, ViT, and Hybrid CNN+Transformer models, measuring MAE, IoU, Precision\/Recall\/F1 on held-out splits and, later, planner performance. \\
+	\textbf{Planner status:} Planner-in-the-loop evaluation with A* and RRT* is \emph{not yet performed in this milestone} and is planned as future work.
+
+\section{Related Work}
+Our proposal emphasized works that learn traversability or BEV maps from vision while connecting predictions to planning utility. We keep foundational dense-prediction references (U-Net; ViT) for context and highlight the proposal-cited papers below. We will format final citations per NeurIPS (Bib\TeX recommended).
+\begin{itemize}
+  \item \textbf{TerrainNet} (Meng et al., 2023): fuses semantic and geometric cues for high-speed off-road traversability; stresses boundary fidelity and planning-aware metrics.
+  \item \textbf{U-Net adaptation for Mars rovers} (Qiu \& Lloyd, 2025): simplified U-Net variant highlighting efficiency for resource-limited platforms.
+  \item \textbf{Trans4Map} (Chen et al., 2022): ViT-based egocentric-to-BEV mapping improving global consistency.
+  \item \textbf{Camera-only BEV pipelines} (Bochare, 2025; Chang et al., 2024): show promise without LiDAR but exhibit sensitivity to depth errors and calibration.
+  \item \textbf{Preference-conditioned costmaps} (Mao et al., 2025): condition costmaps on user preferences; complementary to our fixed traversability objective.
+  \item \textbf{Foundational background}: U-Net for dense prediction (Ronneberger et al., 2015) and ViT (Dosovitskiy et al., 2021).
+\end{itemize}
+Compared to these, our focus is a unified pipeline that (i) standardizes supervision from depth-derived costmaps on indoor/outdoor datasets, (ii) compares UNet, ViT, and Hybrid encoders under identical training and metrics, and (iii) evaluates both perception quality and planner-level outcomes (A*, RRT*).
+
+\section{Methodology (Tentative Technical Approach)}
+\subsection{Data Processing and Labels}
+We implemented scripts to prepare NYU and KITTI, discover RGB\/Depth pairs, and generate targets. Depth is projected\/processed into an egocentric grid and converted to a normalized costmap $C\in[0,1]^{64\times64}$. The same heuristic is used across datasets to ensure label consistency.
+
+\subsection{Models}
+We compare three families with a common lightweight decoder to a 1-channel output:
+\begin{itemize}
+  \item \textbf{UNet (CNN baseline)}: encoder--decoder with skip connections.
+  \item \textbf{ViT encoder}: patch embedding + transformer encoder + convolutional upsampling decoder.
+  \item \textbf{Hybrid}: CNN stem, transformer bottleneck, CNN decoder for local\,+\,global fusion.
+\end{itemize}
+All models produce a $64\times64$ map (resize applied if needed).
+
+\subsection{Objective and Metrics}
+Training loss uses $\mathcal{L} = \lambda_{\ell_1}\,\mathcal{L}_{\ell_1} + \lambda_{d}\,\mathcal{L}_{\text{Dice}} (+ \lambda_b\,\mathcal{L}_{\text{boundary}})$.
+Evaluation reports Mean Absolute Error (MAE) on continuous cost and IoU, Precision, Recall, and F1 on a binarized map (threshold $\tau{=}0.5$ by default).
+
+\subsection{Evaluation Protocol}
+We train per-dataset (NYU, KITTI) and evaluate on held-out validation splits. Optional cross-domain tests (NYU$\rightarrow$KITTI and vice versa) assess generalization. For this milestone, we report \emph{perception metrics only}; planner-in-the-loop evaluation (A*, RRT*) of predicted costmaps is future work.
+
+\subsection{Hypotheses}
+\begin{description}
+  \item[H1 (Modality)] RGBD inputs outperform RGB-only for IoU and MAE, holding model and schedule fixed.
+  \item[H2 (Architecture)] The Hybrid model achieves higher IoU than pure UNet or ViT at similar parameter budgets.
+  \item[H3 (Objective)] L1+Dice improves IoU over L1-only by emphasizing occupied regions and boundaries.
+\end{description}
+
+\section{Baseline Results \& Trials of Your Method (Placeholders)}
+This section is designed for the milestone's required baseline and preliminary results. Replace placeholders with actual numbers, figures, and brief analyses.
+
+\subsection{Baselines}
+\begin{itemize}
+  \item \textbf{Classical depth-to-cost (no learning)}: thresholding\/morphology\/distance transform to produce costmap.
+  \item \textbf{Sanity checks}: all-free and all-obstacle predicted maps to validate metric behavior.
+\end{itemize}
+
+\subsection{Quantitative Results (to be filled)}
+% Example table layout; duplicate for KITTI and NYU as needed.
+\begin{table}[h]
+  \centering
+  \caption{NYU validation metrics (placeholder). Threshold $\tau{=}0.5$.}
+  \label{tab:nyu_results}
+  \begin{tabular}{lcccccc}
+    \toprule
+    Method & MAE $\downarrow$ & IoU $\uparrow$ & Precision & Recall & F1 & Params (M) \\
+    \midrule
+    Classical depth-to-cost & -- & -- & -- & -- & -- & -- \\
+    UNet & -- & -- & -- & -- & -- & -- \\
+    ViT & -- & -- & -- & -- & -- & -- \\
+    Hybrid & -- & -- & -- & -- & -- & -- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% Duplicate table for KITTI to satisfy common reporting across datasets
+\begin{table}[h]
+  \centering
+  \caption{KITTI validation metrics (placeholder). Threshold $\tau{=}0.5$.}
+  \label{tab:kitti_results}
+  \begin{tabular}{lcccccc}
+    	oprule
+    Method & MAE $\downarrow$ & IoU $\uparrow$ & Precision & Recall & F1 & Params (M) \\
+    \midrule
+    Classical depth-to-cost & -- & -- & -- & -- & -- & -- \\
+    UNet & -- & -- & -- & -- & -- & -- \\
+    ViT & -- & -- & -- & -- & -- & -- \\
+    Hybrid & -- & -- & -- & -- & -- & -- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Implementation Notes (to be filled)}
+% ~One paragraph or subsection per teammate; include design choices and observations.
+\subsubsection*{UNet Implementation}
+Design summary, training settings, challenges, and key results.
+
+\subsubsection*{ViT Implementation}
+Design summary, training settings, challenges, and key results.
+
+\subsubsection*{Hybrid Implementation}
+Design summary, training settings, challenges, and key results.
+
+\subsection{Qualitative Results}
+Include side-by-side panels: RGB, Depth, baseline costmap, predicted costmap, and binarized occupancy overlay.
+
+\section{Next Steps (Placeholder: to be properly filled)}
+\textbf{Near-term (1--2 weeks).} Implement classical baseline; complete UNet; run first comparisons on NYU and KITTI; perform a light hyperparameter search (lr, batch size, $\lambda_d$).
+
+\textbf{Mid-term (3--4 weeks).} Implement ViT and Hybrid; cross-domain tests; ablations for H1--H3 (modality, architecture, objective). Optional planner smoke tests using A* and RRT* with predicted costmaps.
+
+\textbf{Endgame.} Error analysis on boundary regions and thin obstacles; compute FLOPs\/latency; finalize figures and writing.
+
+\section*{Reproducibility}
+All code and configuration files are in the repository (data processing scripts; PyTorch training and evaluation; YAML configs). Processed pair counts: NYU 523/131 (train/val); KITTI 438/433. Data sharing is via three archives (\texttt{kitti\_raw.zip}, \texttt{nyu\_raw.zip}, \texttt{processed.zip}) with a fetch script for teammates.
+
+\section*{References (placeholder)}
+\begin{thebibliography}{9}\itemsep0pt
+% Foundational
+\bibitem{unet} Ronneberger, O., Fischer, P., Brox, T. U-Net: Convolutional Networks for Biomedical Image Segmentation. MICCAI, 2015.
+\bibitem{vit} Dosovitskiy, A., et al. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. ICLR, 2021.
+% Proposal-cited works
+\bibitem{meng2023} Meng, X., et al. TerrainNet: Visual Modeling of Complex Terrain for High-speed, Off-road Navigation. 2023.
+\bibitem{qiu2025} Qiu, R., and Lloyd, V. Reduced Image Classes in Modified U-Net for Mars Rover Navigation. 2025.
+\bibitem{chen2022} Chen, C., et al. Trans4Map: Revisiting Holistic BEV Mapping from Egocentric Images with Vision Transformers. 2022.
+\bibitem{bochare2025} Bochare, A. Camera-Only Bird’s Eye View Perception: A Neural Approach to LiDAR-Free Mapping for Autonomous Vehicles. 2025.
+\bibitem{chang2024} Chang, et al. BEVMap: Map-Aware BEV Modeling for 3D Perception. 2024.
+\bibitem{mao2025} Mao, L., et al. PACER: Preference-conditioned All-terrain CostMap Generation. 2025.
+% Additional background
+\bibitem{monodepth2} Godard, C., Aodha, O. M., Brostow, G. Monodepth2. ICCV, 2019.
+\bibitem{deepdriving} Chen, C., et al. Deep Driving. ICCV, 2015.
+\bibitem{vin} Tamar, A., et al. Value Iteration Networks. NeurIPS, 2016.
+\end{thebibliography}
+
+% Appendix allowed \textbf{only for figures}; no additional text per guidelines/instructions/rubric.
+\appendix
+\section*{Appendix (Figures Only)}
+% Example multi-panel qualitative figure placeholder (remove if not used).
+\begin{figure}[h]
+  \centering
+  % \includegraphics[width=0.95\linewidth]{figs/qualitative_panel_example}
+  \caption{Qualitative examples (placeholder): RGB, Depth, classical baseline costmap, predicted costmap, binarized occupancy overlay.}
+\end{figure}
+
+\end{document}
