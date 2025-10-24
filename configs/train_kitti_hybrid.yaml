@@ -1,18 +1,21 @@
-out_dir: runs/nyu_hybrid
+# configs/train_kitti_hybrid.yaml
+out_dir: runs/kitti_hybrid
 data_root: data/processed
-dataset: nyu
+dataset: kitti
 batch_size: 12
 epochs: 5
 num_workers: 4
+
 model_module: src.models.hybrid
 model_class: HybridCNNTransformer
 model_kwargs:
-  in_channels: 4
+  in_channels: 4          # RGBD input
   out_channels: 1
-  base: 32
+  base: 32                # same as base_channels in YAML style
   tf_layers: 2
   tf_heads: 4
   tf_mlp: 2.0
+
 lr: 0.0008
 loss_weights:
   l1: 1.0
