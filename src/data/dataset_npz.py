@@ -18,7 +18,7 @@ class CostmapPairsNPZ(Dataset):
         self.root = root
         self.split = split
         self.dataset = dataset
-        pattern = os.path.join(root, dataset, split, '*.npz')
+        pattern = os.path.join('src', root, dataset, split, '*.npz')
         self.files = sorted(glob.glob(pattern))
         if not self.files:
             raise FileNotFoundError(f'No NPZ found under {root}/{dataset}/{split}. Did you run build_pairs?')

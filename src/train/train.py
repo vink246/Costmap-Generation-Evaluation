@@ -36,16 +36,19 @@ def build_losses(cfg):
 def compute_loss(pred, target, weights, l1_fn, dice_fn, bnd_fn):
     l_total = 0.0
     logs = {}
+    # Apply sigmoid to get probabilities for all losses
+    pred_sig = torch.sigmoid(pred)
+    
     if weights.get('l1', 0) > 0:
-        l1 = l1_fn(pred, target)
+        l1 = l1_fn(pred_sig, target)
         l_total = l_total + weights['l1'] * l1
         logs['l1'] = l1.item()
     if weights.get('dice', 0) > 0:
-        d = dice_fn(torch.sigmoid(pred), target)
+        d = dice_fn(pred_sig, target)
         l_total = l_total + weights['dice'] * d
         logs['dice'] = d.item()
     if weights.get('boundary', 0) > 0:
-        b = bnd_fn(torch.sigmoid(pred), target)
+        b = bnd_fn(pred_sig, target)
         l_total = l_total + weights['boundary'] * b
         logs['boundary'] = b.item()
     logs['total'] = float(l_total.item()) if hasattr(l_total, 'item') else float(l_total)
