@@ -40,3 +40,11 @@ class BoundaryLoss(nn.Module):
         gp = grad_mag(pred)
         gt = grad_mag(target)
         return F.l1_loss(gp, gt)
+class BCEWithLogits(nn.Module):
+    """Binary cross-entropy loss for raw logits"""
+    def __init__(self):
+        super().__init__()
+        self.loss_fn = nn.BCEWithLogitsLoss()
+
+    def forward(self, pred, target):
+        return self.loss_fn(pred, target)
