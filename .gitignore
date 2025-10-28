@@ -27,3 +27,15 @@ data/raw/
 
 # VSCode
 .vscode/
+
+# Artifacts and reports
+artifacts/
+
+# LaTeX build outputs (optional)
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
