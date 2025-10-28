@@ -1,76 +1,85 @@
+# Costmap-Generation-Evaluation
 
-# Image-to-Costmap Data Pipeline
+Class project for Georgia Tech's CS7643: Evaluate models to directly predict costmaps from RGB(-D) images.
+
+---
+
+## Image-to-Costmap Data Pipeline
 
 This repo contains a data pipeline to convert RGB+D datasets (KITTI raw and NYU Depth v2) into supervised training pairs for predicting local egocentric costmaps.
 
-## Data Setup Rationale
+### Data Setup Rationale
 
-### Why this structure?
-- **Unified supervised pairs:** Both datasets are converted to a common format: normalized RGB+D image, costmap label, and metadata. This enables direct benchmarking of architectures and fair comparison across domains.
-- **Train/val splits only:** We use 80% of data for training and 20% for validation. No test set is used, as all final evaluation is done on the validation split after tuning. This avoids overfitting to a small test set and maximizes training data.
-- **NYU Depth v2 split:** The Kaggle mirror divides data into `nyu2_train` (small) and `nyu2_test` (large). We combine both and create our own 80/20 split for train/val, ensuring the largest possible training set and a representative validation set.
-- **KITTI split:** Drives are split into train/val according to `configs/data.yaml`. Each drive contains synchronized RGB and LiDAR/depth data.
+Why this structure?
+- Unified supervised pairs: Both datasets are converted to a common format: normalized RGB+D image, costmap label, and metadata. This enables direct benchmarking of architectures and fair comparison across domains.
+- Train/val splits only: We use 80% of data for training and 20% for validation. No test set is used, as all final evaluation is done on the validation split after tuning.
+- NYU Depth v2 split: The Kaggle mirror divides data into `nyu2_train` (small) and `nyu2_test` (large). We combine both and create our own 80/20 split for train/val.
+- KITTI split: Drives are split into train/val according to `configs/data.yaml`. Each drive contains synchronized RGB and LiDAR/depth data.
 
-### Output structure
+Output structure
 - `data/processed/<dataset>/<split>/*.npz` where each file contains:
   - `image`: (256, 256, 4) float32 RGB+D normalized
   - `costmap`: (64, 64) float32 in [0, 1]
   - `meta`: dict with frame_id, calibration, roi, grid_resolution
 
-## How the pipeline works
+### How the pipeline works
 
-1. **Create a Python venv and install dependencies:**
-  ```powershell
-  python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -r requirements.txt
-  ```
+1) Create a Python venv and install dependencies (Windows PowerShell):
 
-2. **Configure dataset paths in `configs/data.yaml`:**
-  - Set the correct root folders for KITTI and NYU raw data.
+```powershell
+python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -r requirements.txt
+```
 
-3. **Prepare NYU Depth v2:**
-  - Run the prep script to combine all samples from `nyu2_train` and `nyu2_test`, then split into `subset_train` (80%) and `subset_val` (20%):
-  ```powershell
-  python scripts/prepare_nyu_from_kaggle.py --root data/raw/nyu_depth_v2 --source nyu_data/data
-  ```
+2) Configure dataset paths in `configs/data.yaml`.
 
-4. **Build pairs for KITTI:**
-  ```powershell
-  python scripts/build_pairs.py --dataset kitti --config configs/data.yaml --out data/processed
-  ```
+3) Prepare NYU Depth v2:
 
-5. **Build pairs for NYU Depth v2:**
-  ```powershell
-  python scripts/build_pairs.py --dataset nyu --config configs/data.yaml --out data/processed
-  ```
+```powershell
+python scripts/prepare_nyu_from_kaggle.py --root data/raw/nyu_depth_v2 --source nyu_data/data
+```
 
-6. **Train a baseline (U-Net):**
-  ```powershell
-  # NYU
-  python -m src.train.train --config configs/train_nyu_unet.yaml
-  # KITTI
-  python -m src.train.train --config configs/train_kitti_unet.yaml
-  ```
+4) Build pairs for KITTI:
 
-7. **Evaluate a checkpoint on val:**
-  ```powershell
-  # Adjust checkpoint path if needed (e.g., runs/nyu_unet/unet_best.pth)
-  python -m src.eval.evaluate_model --checkpoint runs/nyu_unet/unet_best.pth --dataset nyu --data_root data/processed
-  ```
+```powershell
+python scripts/build_pairs.py --dataset kitti --config configs/data.yaml --out data/processed
+```
 
-8. **Swap in your own architectures:**
-  - Implement your model in a module like `src/models/<your_model>.py`
-  - Set in the config:
-    - `model_module: src.models.<your_model>`
-    - `model_class: <YourClassName>`
-    - `model_kwargs: { ... }` as needed
+5) Build pairs for NYU Depth v2:
+
+```powershell
+python scripts/build_pairs.py --dataset nyu --config configs/data.yaml --out data/processed
+```
+
+6) Train a baseline (U-Net):
+
+```powershell
+# NYU
+python -m src.train.train --config configs/train_nyu_unet.yaml
+# KITTI
+python -m src.train.train --config configs/train_kitti_unet.yaml
+```
+
+7) Evaluate a checkpoint on val:
+
+```powershell
+# Adjust checkpoint path if needed (e.g., runs/nyu_unet/unet_best.pth)
+python -m src.eval.evaluate_model --checkpoint runs/nyu_unet/unet_best.pth --dataset nyu --data_root data/processed
+```
+
+8) Swap in your own architectures:
+- Implement your model in `src/models/<your_model>.py`
+- Set in the config:
+  - `model_module: src.models.<your_model>`
+  - `model_class: <YourClassName>`
+  - `model_kwargs: { ... }`
 
 Notes for teammates: The model files are placeholders:
-  - `src/models/unet.py` -> class `UNet`
-  - `src/models/vit.py` -> class `ViT`
-  - `src/models/hybrid.py` -> class `HybridCNNTransformer`
-Fill in the actual layers/forward method and adjust `model_kwargs` in the config accordingly.
+- `src/models/unet.py` -> class `UNet`
+- `src/models/vit.py` -> class `ViT`
+- `src/models/hybrid.py` -> class `HybridCNNTransformer`
 
 ### Train other models (examples)
+
 ```powershell
 # ViT variant (after implementing src/models/vit.py:ViT)
 python -m src.train.train --config configs/train_nyu_vit.yaml
@@ -89,40 +98,114 @@ Planner-based metrics (A*/RRT*) are not included yet. Suggested structure when a
 - `src/planning/astar.py`, `src/planning/rrt_star.py`
 - `src/eval/evaluate_planner.py` to run planners on predicted costmaps and report success, collisions, path length, and planning time.
 
+---
+
+## Environment setup (PACE-ICE)
+
+If you're using Georgia Tech's PACE-ICE cluster, here's a quick conda flow:
+
+1) Load Anaconda module
+
+```bash
+module load anaconda3
+```
+
+2) Create a Conda environment in scratch
+
+```bash
+conda create --prefix /scratch/<path_to_env_parent_dir>/costmap_env python=3.12 -y
+```
+
+3) Activate
+
+```bash
+conda activate /scratch/<path_to_env_parent_dir>/costmap_env
+```
+
+4) Install packages
+
+```bash
+conda install pytorch torchvision torchaudio -c pytorch -y
+conda install numpy matplotlib opencv scipy scikit-learn tqdm -y
+conda install jupyterlab -y
+```
+
+5) Verify
+
+```bash
+python -m pip list
+python -c "import torch; print(torch.__version__)"
+```
+
+6) Export env (optional)
+
+```bash
+conda env export > /scratch/<path_to_env_parent_dir>/costmap_env.yml
+conda env create --prefix /scratch/<path_to_env_parent_dir>/costmap_env --file costmap_env.yml
+```
+
+---
+
+## Generating Ground-Truth Costmaps from NYU Depth v2
+
+Goal: Convert RGB+D frames into 64×64 continuous costmaps in [0,1].
+
+1) Load and align data: RGB `(H×W×3)`, depth `(H×W)`, intrinsics `(fx, fy, cx, cy)`.
+
+2) Back-project depth to 3D:
+
+```python
+x = (u - cx) * z / fx
+y = (v - cy) * z / fy
+```
+
+3) Project to BEV: define an egocentric grid (e.g., 6.4×6.4 m), bin points by (x,z).
+
+4) Traversability cost: use height stats; e.g., `sigmoid(a*(max_h-h_t)) + b*std_h`, normalize to [0,1].
+
+5) Post-process: dilate by robot footprint; optional Gaussian blur.
+
+6) Resize to 64×64.
+
+Output sample format:
+
+```
+{ rgb: H×W×4 (4th=depth), costmap: 64×64 }
+```
+
+---
+
 ## Sharing data with the team
-Would rather not commit large datasets, so we will use these helper scripts:
 
-- (Rut) Package the local data into zips for sharing:
-  ```powershell
-  .\scripts\pack_data.ps1 -OutDir artifacts
-  # Upload artifacts/kitti_raw.zip, artifacts/nyu_raw.zip, artifacts/processed.zip to OneDrive/Drive/S3
-  ```
+We do not commit large datasets. Use helper scripts:
 
-- (Teammates) Download/extract with:
-  ```powershell
-  .\scripts\fetch_data.ps1 -KittiZipUrl "<link-to-kitti_raw.zip>" -NyuZipUrl "<link-to-nyu_raw.zip>" -ProcessedZipUrl "<link-to-processed.zip>"
-  ```
+- Package local data into zips:
+
+```powershell
+./scripts/pack_data.ps1 -OutDir artifacts
+```
+
+- Download/extract:
+
+```powershell
+./scripts/fetch_data.ps1 -KittiZipUrl "<kitti_raw.zip>" -NyuZipUrl "<nyu_raw.zip>" -ProcessedZipUrl "<processed.zip>"
+```
+
+---
 
 ## Dataset details
 
-- **KITTI:**
-  - Raw drives under `data/raw/kitti/<drive>`
-  - Each drive contains RGB images and LiDAR/depth data
-  - Calibration files used for projection
-  - Preprocessing projects depth/LiDAR to BEV costmap, normalizes images, and saves pairs
+- KITTI: raw drives under `data/raw/kitti/<drive>` with RGB + LiDAR; preprocessing projects to BEV costmaps.
+- NYU Depth v2: Kaggle mirror provides `nyu2_train` and `nyu2_test`; prep script combines and splits into `subset_train`/`subset_val`.
 
-- **NYU Depth v2:**
-  - Kaggle mirror provides `nyu2_train` and `nyu2_test` folders
-  - Prep script combines both, then splits into `subset_train` and `subset_val` for training/validation
-  - Each sample folder contains `rgb/<id>.png` and `depth/<id>.png`
+## Proposal-aligned settings
 
-## Proposal-aligned settings (might change based on instructor/TAs' feedback)
-- ROI: 10m x 10m local egocentric frame
-- Image size: 256 x 256
-- Costmap resolution: 64 x 64
-- Dilation encoding robot footprint + safety margin
-- Metrics produced later (training): MAE, IoU, Precision/Recall
+- ROI: 10m × 10m
+- Image: 256 × 256
+- Costmap: 64 × 64
+- Metrics: MAE, IoU, Precision/Recall
 
 ## Notes
-- KITTI requires projecting LiDAR/depth to BEV; NYU uses dense depth. Calibrations from dataset folders.
+
+- KITTI requires LiDAR-to-BEV projection; NYU uses dense depth.
 - Planner evaluations will be done using generated costmaps.
