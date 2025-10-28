@@ -154,6 +154,9 @@ venv.bak/
 # Project-specific data outputs
 data/processed/
 !data/processed/.gitkeep
+# Alternative data outputs (older layout)
+src/data/processed/
+!src/data/processed/.gitkeep
 runs/
 
 # Raw data (optional: comment out to track small subsets)
