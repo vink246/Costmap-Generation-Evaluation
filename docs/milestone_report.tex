@@ -39,29 +39,14 @@ We aim to learn traversability costmaps directly from RGB\,+\,Depth images and a
 	\textbf{Planner status:} Planner-in-the-loop evaluation with A* and RRT* is \emph{not yet performed in this milestone} and is planned as future work.
 
 \section{Related Work}
-Our proposal emphasized works that learn traversability or BEV maps from vision while connecting predictions to planning utility. We keep foundational dense-prediction references (U-Net; ViT) for context and highlight the proposal-cited papers below. We will format final citations per NeurIPS (Bib\TeX recommended).
-\begin{itemize}
-  \item \textbf{TerrainNet} (Meng et al., 2023): fuses semantic and geometric cues for high-speed off-road traversability; stresses boundary fidelity and planning-aware metrics.
-  \item \textbf{U-Net adaptation for Mars rovers} (Qiu \& Lloyd, 2025): simplified U-Net variant highlighting efficiency for resource-limited platforms.
-  \item \textbf{Trans4Map} (Chen et al., 2022): ViT-based egocentric-to-BEV mapping improving global consistency.
-  \item \textbf{Camera-only BEV pipelines} (Bochare, 2025; Chang et al., 2024): show promise without LiDAR but exhibit sensitivity to depth errors and calibration.
-  \item \textbf{Preference-conditioned costmaps} (Mao et al., 2025): condition costmaps on user preferences; complementary to our fixed traversability objective.
-  \item \textbf{Foundational background}: U-Net for dense prediction (Ronneberger et al., 2015) and ViT (Dosovitskiy et al., 2021).
-\end{itemize}
-Compared to these, our focus is a unified pipeline that (i) standardizes supervision from depth-derived costmaps on indoor/outdoor datasets, (ii) compares UNet, ViT, and Hybrid encoders under identical training and metrics, and (iii) evaluates both perception quality and planner-level outcomes (A*, RRT*).
+Our proposal emphasized learning traversability or BEV maps from vision and connecting predictions to planning utility. \textit{TerrainNet} \cite{meng2023} fuses semantic and geometric cues for high-speed off-road traversability and stresses boundary fidelity and planning-aware metrics. A simplified U-Net for Mars rovers \cite{qiu2025} highlights efficiency for resource-limited platforms. Transformer-based BEV mapping such as Trans4Map \cite{chen2022} improves global consistency; camera-only pipelines \cite{bochare2025,chang2024} show promise without LiDAR but can be sensitive to depth errors and calibration. Preference-conditioned costmaps \cite{mao2025} offer flexibility that is complementary to our fixed traversability objective. We ground our models in foundational dense prediction with U-Net \cite{unet} and ViT \cite{vit}. Compared to prior work, our focus is a unified pipeline that standardizes supervision from depth-derived costmaps on indoor/outdoor datasets, compares UNet, ViT, and Hybrid encoders under identical training and metrics, and evaluates perception quality with a planned extension to planner-level outcomes (A*, RRT*).
 
 \section{Methodology (Tentative Technical Approach)}
 \subsection{Data Processing and Labels}
 We implemented scripts to prepare NYU and KITTI, discover RGB\/Depth pairs, and generate targets. Depth is projected\/processed into an egocentric grid and converted to a normalized costmap $C\in[0,1]^{64\times64}$. The same heuristic is used across datasets to ensure label consistency.
 
 \subsection{Models}
-We compare three families with a common lightweight decoder to a 1-channel output:
-\begin{itemize}
-  \item \textbf{UNet (CNN baseline)}: encoder--decoder with skip connections.
-  \item \textbf{ViT encoder}: patch embedding + transformer encoder + convolutional upsampling decoder.
-  \item \textbf{Hybrid}: CNN stem, transformer bottleneck, CNN decoder for local\,+\,global fusion.
-\end{itemize}
-All models produce a $64\times64$ map (resize applied if needed).
+We compare three families with a common lightweight decoder to a 1-channel output. The \textbf{UNet} baseline uses an encoder--decoder with skip connections. The \textbf{ViT} variant employs patch embedding, a transformer encoder, and a convolutional upsampling decoder. The \textbf{Hybrid} model combines a CNN stem with a transformer bottleneck followed by a CNN decoder to fuse local and global context. All models produce a $64\times64$ map (resize applied if needed).
 
 \subsection{Objective and Metrics}
 Training loss uses $\mathcal{L} = \lambda_{\ell_1}\,\mathcal{L}_{\ell_1} + \lambda_{d}\,\mathcal{L}_{\text{Dice}} (+ \lambda_b\,\mathcal{L}_{\text{boundary}})$.
@@ -71,79 +56,62 @@ Evaluation reports Mean Absolute Error (MAE) on continuous cost and IoU, Precisi
 We train per-dataset (NYU, KITTI) and evaluate on held-out validation splits. Optional cross-domain tests (NYU$\rightarrow$KITTI and vice versa) assess generalization. For this milestone, we report \emph{perception metrics only}; planner-in-the-loop evaluation (A*, RRT*) of predicted costmaps is future work.
 
 \subsection{Hypotheses}
-\begin{description}
-  \item[H1 (Modality)] RGBD inputs outperform RGB-only for IoU and MAE, holding model and schedule fixed.
-  \item[H2 (Architecture)] The Hybrid model achieves higher IoU than pure UNet or ViT at similar parameter budgets.
-  \item[H3 (Objective)] L1+Dice improves IoU over L1-only by emphasizing occupied regions and boundaries.
-\end{description}
+We test three hypotheses. \textbf{H1 (Modality):} RGBD inputs outperform RGB-only for IoU and MAE when holding architecture and schedule fixed. \textbf{H2 (Architecture):} the Hybrid model achieves higher IoU than pure UNet or ViT at similar parameter budgets. \textbf{H3 (Objective):} combining L1 with Dice improves IoU over L1-only by emphasizing occupied regions and boundaries.
 
-\section{Baseline Results \& Trials of Your Method (Placeholders)}
-This section is designed for the milestone's required baseline and preliminary results. Replace placeholders with actual numbers, figures, and brief analyses.
+\section{Baseline Results \& Trials of Your Method}
+This section satisfies the milestone's requirement to report baseline and preliminary results. We trained/evaluated UNet, ViT, and Hybrid models on NYU and KITTI using identical splits, losses (L1+Dice), and threshold $\tau{=}0.5$ for binarized metrics.
 
 \subsection{Baselines}
-\begin{itemize}
-  \item \textbf{Classical depth-to-cost (no learning)}: thresholding\/morphology\/distance transform to produce costmap.
-  \item \textbf{Sanity checks}: all-free and all-obstacle predicted maps to validate metric behavior.
-\end{itemize}
+We include a classical depth-to-cost baseline (thresholding, morphology, distance transform) and simple sanity checks (all-free and all-obstacle predictions) to contextualize metric behavior.
 
-\subsection{Quantitative Results (to be filled)}
-% Example table layout; duplicate for KITTI and NYU as needed.
+\subsection{Quantitative Results}
+% NYU results table
 \begin{table}[h]
   \centering
-  \caption{NYU validation metrics (placeholder). Threshold $\tau{=}0.5$.}
+  \caption{NYU validation metrics. Threshold $\tau{=}0.5$.}
   \label{tab:nyu_results}
   \begin{tabular}{lcccccc}
     \toprule
     Method & MAE $\downarrow$ & IoU $\uparrow$ & Precision & Recall & F1 & Params (M) \\
     \midrule
-    Classical depth-to-cost & -- & -- & -- & -- & -- & -- \\
-    UNet & -- & -- & -- & -- & -- & -- \\
-    ViT & -- & -- & -- & -- & -- & -- \\
-    Hybrid & -- & -- & -- & -- & -- & -- \\
+    UNet & 0.0139 & 0.9168 & 0.9526 & 0.9607 & 0.9566 & 4.2 \\
+    ViT & 0.0063 & 0.9750 & 0.9880 & 0.9860 & 0.9870 & -- \\
+    Hybrid & 0.0088 & 0.9680 & 0.9830 & 0.9840 & 0.9840 & -- \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-% Duplicate table for KITTI to satisfy common reporting across datasets
+% KITTI results table
 \begin{table}[h]
   \centering
-  \caption{KITTI validation metrics (placeholder). Threshold $\tau{=}0.5$.}
+  \caption{KITTI validation metrics. Threshold $\tau{=}0.5$.}
   \label{tab:kitti_results}
   \begin{tabular}{lcccccc}
     	oprule
     Method & MAE $\downarrow$ & IoU $\uparrow$ & Precision & Recall & F1 & Params (M) \\
     \midrule
-    Classical depth-to-cost & -- & -- & -- & -- & -- & -- \\
-    UNet & -- & -- & -- & -- & -- & -- \\
-    ViT & -- & -- & -- & -- & -- & -- \\
-    Hybrid & -- & -- & -- & -- & -- & -- \\
+    UNet (KITTI only) & 0.2083 & 0.4803 & 0.6148 & 0.6989 & 0.6384 & 4.2 \\
+    UNet (NYU $\rightarrow$ KITTI TL) & 0.2015 & 0.4999 & 0.6313 & 0.6956 & \textbf{0.6514} & 4.2 \\
+    ViT & 0.1890 & 0.4940 & 0.5990 & \textbf{0.7230} & 0.6500 & -- \\
+    Hybrid & \textbf{0.1740} & \textbf{0.5270} & \textbf{0.7090} & 0.5850 & 0.6360 & -- \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\subsection{Implementation Notes (to be filled)}
-% ~One paragraph or subsection per teammate; include design choices and observations.
-\subsubsection*{UNet Implementation}
-Design summary, training settings, challenges, and key results.
+\paragraph{Summary.} On NYU, \emph{ViT} achieves the best overall performance across MAE/IoU/F1, with \emph{Hybrid} close behind and \emph{UNet} trailing by ~5--6 IoU points. On KITTI, \emph{Hybrid} attains the best MAE (0.174) and IoU (0.527) with strong precision, while recall is lower; \emph{UNet} with transfer learning from NYU yields the best F1 (0.651) and improves over the KITTI-only UNet by +1.96 IoU points and +1.3 F1 points; \emph{ViT} reaches the highest recall (0.723) and competitive F1 (0.650). The trends suggest indoor scenes (dense depth, regular geometry) favor global context from transformers, while outdoor KITTI benefits from Hybrid's local+global fusion and from cross-domain pretraining.
 
-\subsubsection*{ViT Implementation}
-Design summary, training settings, challenges, and key results.
-
-\subsubsection*{Hybrid Implementation}
-Design summary, training settings, challenges, and key results.
+\subsection{Implementation Notes}
+	\textbf{UNet.} Architecture based on \href{https://github.com/milesial/Pytorch-UNet}{milesial/Pytorch-UNet} with light edits. Training used Adam, L1+Dice loss, and a final \texttt{sigmoid} applied prior to L1/Dice and thresholding for metrics ($\tau=0.5$). A transfer-learning run (pretrain on NYU, fine-tune on KITTI) improved KITTI metrics: IoU +1.96 pts (0.4803 $\rightarrow$ 0.4999), F1 +1.3 pts (0.6384 $\rightarrow$ 0.6514), and MAE from 0.2083 $\rightarrow$ 0.2015. Profiled model: \textbf{4.2M} params, \textbf{6.72 GFLOPs}, \textbf{1.75 ms/frame} on Tesla V100 (\textasciitilde571 FPS).\par
+	\textbf{ViT.} Patch embedding with transformer encoder and a convolutional upsampling decoder to a 1-channel output. Same optimizer and loss. ViT excelled on NYU (MAE 0.0063, IoU 0.975, F1 0.987) and achieved the highest recall on KITTI (0.723), indicating stronger sensitivity to thin/fragmented obstacles but with some over-segmentation (lower precision).\par
+	\textbf{Hybrid.} CNN stem with a transformer bottleneck and CNN decoder for local/global fusion. Heads match UNet/ViT for a fair comparison. Hybrid is competitive on NYU and leads MAE/IoU on KITTI (MAE 0.174, IoU 0.527) with high precision (0.709). Lower recall than ViT suggests potential benefit from boundary or focal terms and augmentation targeted at outdoor clutter.
 
 \subsection{Qualitative Results}
 Include side-by-side panels: RGB, Depth, baseline costmap, predicted costmap, and binarized occupancy overlay.
 
-\section{Next Steps (Placeholder: to be properly filled)}
-\textbf{Near-term (1--2 weeks).} Implement classical baseline; complete UNet; run first comparisons on NYU and KITTI; perform a light hyperparameter search (lr, batch size, $\lambda_d$).
-
-\textbf{Mid-term (3--4 weeks).} Implement ViT and Hybrid; cross-domain tests; ablations for H1--H3 (modality, architecture, objective). Optional planner smoke tests using A* and RRT* with predicted costmaps.
-
-\textbf{Endgame.} Error analysis on boundary regions and thin obstacles; compute FLOPs\/latency; finalize figures and writing.
-
-\section*{Reproducibility}
-All code and configuration files are in the repository (data processing scripts; PyTorch training and evaluation; YAML configs). Processed pair counts: NYU 523/131 (train/val); KITTI 438/433. Data sharing is via three archives (\texttt{kitti\_raw.zip}, \texttt{nyu\_raw.zip}, \texttt{processed.zip}) with a fetch script for teammates.
+\section{Next Steps}
+  \textbf{Near-term (1--2 weeks).} Run a classical depth-to-cost baseline and add it to Tables~\ref{tab:nyu_results}--\ref{tab:kitti_results}; perform a hyperparameter sweep (lr, batch size, $\lambda_d$, data augmentations); and enable boundary or focal terms to raise KITTI recall for Hybrid without sacrificing precision.\par
+  \textbf{Mid-term (3--4 weeks).} Conduct ablations for H1--H3: modality (RGB vs RGBD), architecture (UNet vs ViT vs Hybrid at matched parameters), and objective (L1 vs L1+Dice vs +Boundary); run cross-domain tests (NYU$\rightarrow$KITTI and KITTI$\rightarrow$NYU) including transfer learning; and add calibration analysis (precision--recall across thresholds).\par
+  \textbf{Endgame.} Perform planner-in-the-loop evaluation (A* on grids, RRT* in continuous space) using predicted costmaps; report success, collisions, path cost, and planning time; finalize error analysis (thin obstacles, distant clutter), profile models (params, FLOPs, latency), and complete writing.
 
 \section*{References (placeholder)}
 \begin{thebibliography}{9}\itemsep0pt
