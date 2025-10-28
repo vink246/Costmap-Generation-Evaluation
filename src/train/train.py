@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from src.data.dataset_npz import CostmapPairsNPZ
-from .losses import L1Loss, DiceLoss, BoundaryLoss
+from .losses import L1Loss, DiceLoss, BoundaryLoss, BCEWithLogits
 from .metrics import mae, iou_binary, precision_recall_f1
 
 
@@ -29,11 +29,11 @@ def build_dataloaders(data_root, dataset_name, batch_size, num_workers):
 
 
 def build_losses(cfg):
-    w = cfg.get('loss_weights', {'l1': 1.0, 'dice': 0.5, 'boundary': 0.1})
-    return w, L1Loss(), DiceLoss(), BoundaryLoss()
+    w = cfg.get('loss_weights', {'bce': 1.0,'l1': 1.0, 'dice': 0.5, 'boundary': 0.1})
+    return w, L1Loss(), DiceLoss(), BoundaryLoss(), BCEWithLogits()
 
 
-def compute_loss(pred, target, weights, l1_fn, dice_fn, bnd_fn):
+def compute_loss(pred, target, weights, l1_fn, dice_fn, bnd_fn, bce_fn):
     l_total = 0.0
     logs = {}
     # Apply sigmoid to get probabilities for all losses
@@ -51,6 +51,10 @@ def compute_loss(pred, target, weights, l1_fn, dice_fn, bnd_fn):
         b = bnd_fn(pred_sig, target)
         l_total = l_total + weights['boundary'] * b
         logs['boundary'] = b.item()
+    if weights.get('bce', 0) > 0:
+        bce = bce_fn(pred, target)
+        l_total += weights['bce'] * bce
+        logs['bce'] = bce.item()
     logs['total'] = float(l_total.item()) if hasattr(l_total, 'item') else float(l_total)
     return l_total, logs
 
@@ -109,7 +113,7 @@ def main():
     ModelClass = getattr(importlib.import_module(model_module), model_class)
     model = ModelClass(**model_kwargs).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-    weights, l1_fn, dice_fn, bnd_fn = build_losses(cfg)
+    weights, l1_fn, dice_fn, bnd_fn, bce_fn = build_losses(cfg)
 
     best_f1 = -1
     for epoch in range(1, epochs+1):
@@ -123,7 +127,7 @@ def main():
                 pred = torch.nn.functional.interpolate(pred_full, size=cm.shape[-2:], mode='bilinear', align_corners=False)
             else:
                 pred = pred_full
-            loss, logs = compute_loss(pred, cm, weights, l1_fn, dice_fn, bnd_fn)
+            loss, logs = compute_loss(pred, cm, weights, l1_fn, dice_fn, bnd_fn,bce_fn)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
