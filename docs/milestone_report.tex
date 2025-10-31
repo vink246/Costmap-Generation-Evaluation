@@ -17,8 +17,8 @@
 \usepackage[final,nonatbib]{Styles/neurips_2025}
 \usepackage{xcolor}
 
-	\title{CS 7643 Milestone Report: Learning Costmap Generation from RGB\,\&\,Depth for Mobile Robot Navigation}
-\author{Rut Santana \and Ibrahim Alshayeb \and Vineet Kulkarni \and Meera Ranjan}
+\title{CS 7643 Milestone Report: Learning Costmap Generation from RGB\,\&\,Depth for Mobile Robot Navigation}
+\author{\normalfont Rut Santana \and Ibrahim Alshayeb \and Vineet Kulkarni \and Meera Ranjan}
 \date{November 2nd, 2025}
 
 \begin{document}
@@ -87,12 +87,12 @@ We include a classical depth-to-cost baseline (thresholding, morphology, distanc
   \caption{KITTI validation metrics. Threshold $\tau{=}0.5$.}
   \label{tab:kitti_results}
   \begin{tabular}{lcccccc}
-    	oprule
+    \toprule
     Method & MAE $\downarrow$ & IoU $\uparrow$ & Precision & Recall & F1 & Params (M) \\
     \midrule
     UNet (KITTI only) & 0.2083 & 0.4803 & 0.6148 & 0.6989 & 0.6384 & 4.2 \\
     UNet (NYU $\rightarrow$ KITTI TL) & 0.2015 & 0.4999 & 0.6313 & 0.6956 & \textbf{0.6514} & 4.2 \\
-    ViT & 0.1890 & 0.4940 & 0.5990 & \textbf{0.7230} & 0.6500 & -- \\
+    ViT & 0.1890 & 0.4940 & 0.5990 & \textbf{0.7230} & 0.6500 & 10.8 \\
     Hybrid & \textbf{0.1740} & \textbf{0.5270} & \textbf{0.7090} & 0.5850 & 0.6360 & -- \\
     \bottomrule
   \end{tabular}
