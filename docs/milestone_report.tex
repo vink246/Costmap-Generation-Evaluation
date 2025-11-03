@@ -29,13 +29,13 @@ We aim to learn traversability costmaps directly from RGB\,+\,Depth images and a
 \end{abstract}
 
 \section{Introduction}
-\textbf{Problem \/ Motivation.} Safe autonomous navigation requires reliable costmaps marking free space and obstacles for planners (e.g., A*, RRT*). Classical pipelines generated from depth/LiDAR can be brittle across domains and sensors. We study learning costmaps from RGB\,+\,Depth (RGBD) to improve robustness while preserving planner compatibility.
+	\textbf{Problem / Motivation.} Safe autonomous navigation requires reliable costmaps marking free space and obstacles for planners (e.g., A*, RRT*). Classical pipelines generated from depth/LiDAR can be brittle across domains and sensors. We study learning costmaps from RGB\,+\,Depth (RGBD) to improve robustness while preserving planner compatibility.
 
-\textbf{Inputs\/Outputs \/ Training Conditions.} Input is a single RGBD image $I\in\mathbb{R}^{H\times W\times 4}$; output is a local, egocentric costmap $C\in[0,1]^{64\times 64}$. We also evaluate a binarized occupancy map by thresholding $C$. Supervision uses costmaps derived from depth-based heuristics. Optimization uses Adam with a composite objective of L1 and Dice losses (and an optional boundary-aware term).
+	\textbf{Inputs/Outputs / Training Conditions.} Input is a single RGBD image $I\in\mathbb{R}^{H\times W\times 4}$; output is a local, egocentric costmap $C\in[0,1]^{64\times 64}$. We also evaluate a binarized occupancy map by thresholding $C$. Supervision uses costmaps derived from depth-based heuristics. Optimization uses Adam with a composite objective of L1 and Dice losses (and an optional boundary-aware term).
 
 \textbf{Datasets and splits (paired .npz).} NYU: 523 train, 131 val. KITTI: 438 train, 433 val. All pairs are standardized to 4-channel inputs and $64\times64$ targets.
 
-	\textbf{Goal.} Compare classical depth-to-cost mapping with UNet, ViT, and Hybrid CNN+Transformer models, measuring MAE, IoU, Precision\/Recall\/F1 on held-out splits and, later, planner performance. \\
+  \textbf{Goal.} Compare classical depth-to-cost mapping with UNet, ViT, and Hybrid CNN+Transformer models, measuring MAE, IoU, Precision/Recall/F1 on held-out splits and, later, planner performance. \\
 	\textbf{Planner status:} Planner-in-the-loop evaluation with A* and RRT* is \emph{not yet performed in this milestone} and is planned as future work.
 
 \section{Related Work}
@@ -43,7 +43,7 @@ Our proposal emphasized learning traversability or BEV maps from vision and conn
 
 \section{Methodology (Tentative Technical Approach)}
 \subsection{Data Processing and Labels}
-We implemented scripts to prepare NYU and KITTI, discover RGB\/Depth pairs, and generate targets. Depth is projected\/processed into an egocentric grid and converted to a normalized costmap $C\in[0,1]^{64\times64}$. The same heuristic is used across datasets to ensure label consistency.
+We implemented scripts to prepare NYU and KITTI, discover RGB/Depth pairs, and generate targets. Depth is projected/processed into an egocentric grid and converted to a normalized costmap $C\in[0,1]^{64\times64}$. The same heuristic is used across datasets to ensure label consistency.
 
 \subsection{Models}
 We compare three families with a common lightweight decoder to a 1-channel output. The \textbf{UNet} baseline uses an encoder--decoder with skip connections. The \textbf{ViT} variant employs patch embedding, a transformer encoder, and a convolutional upsampling decoder. The \textbf{Hybrid} model combines a CNN stem with a transformer bottleneck followed by a CNN decoder to fuse local and global context. All models produce a $64\times64$ map (resize applied if needed).
@@ -108,12 +108,6 @@ We include a classical depth-to-cost baseline (thresholding, morphology, distanc
 \subsection{Qualitative Results}
 Include side-by-side panels: RGB, Depth, baseline costmap, predicted costmap, and binarized occupancy overlay.
 
-\subsection{Problem Decomposition and Experimental Plan}
-Our three hypotheses translate into concrete experiments. For \textbf{H1 (Modality)}, we will hold the architecture and training schedule fixed and compare RGBD versus RGB-only inputs on both NYU and KITTI, reporting MAE, IoU, precision/recall, and F1 at $\tau{=}0.5$ alongside PR curves to analyze calibration across thresholds. For \textbf{H2 (Architecture)}, we will match parameter budgets across UNet, ViT, and Hybrid by adjusting base channel widths and transformer depth, then compare accuracy, FLOPs, and latency; this isolates representational differences from capacity. For \textbf{H3 (Objective)}, we will ablate L1 versus L1+Dice and optionally add a boundary-aware term; we expect L1+Dice to improve occupied-region fidelity and thin obstacles. Training follows the same splits used here (NYU: 523/131; KITTI: 438/433). Risks include domain shift and class imbalance outdoors; we mitigate with transfer learning (NYU$\rightarrow$KITTI) and augmentation (random brightness/contrast, flips, small perspective jitter). Success criteria are: (i) NYU F1 $\geq$ 0.98 for the best model; (ii) KITTI IoU $\geq$ 0.53 with F1 $\geq$ 0.65; and (iii) real-time feasibility on a single GPU (\(\leq\) 10 ms/frame for 256$\times$256 RGBD).
-
-\subsection{Classical Baseline and Training Setup}
-The classical depth-to-cost baseline thresholds depth to mark obstacles, applies morphology to close holes and dilate by a robot footprint, and computes a distance transform to produce a continuous cost map normalized to $[0,1]$. This provides an interpretable, planner-compatible reference and informs error modes (such as thin obstacles, sensor noise, etc.). All learning models use Adam, L1+Dice loss, and \texttt{sigmoid} activation before regression and thresholding; metrics default to $\tau{=}0.5$ with PR curves computed for sensitivity analysis. Unless otherwise noted, we train with batch sizes tuned per GPU memory, cosine or step LR schedules around 1e-3 initial rate, and early stopping on validation F1. We profile params, FLOPs, and latency to quantify deployability; UNet runs at 1.75 ms/frame on a V100 at $\sim$571 FPS, while ViT/Hybrid trade a modest latency increase for improved accuracy.
-
 \begin{figure}[h]
   \centering
   % Teaser placeholder (no external file needed): three framed boxes
@@ -124,6 +118,14 @@ The classical depth-to-cost baseline thresholds depth to mark obstacles, applies
   \caption{Draft teaser figure illustrating the input modalities and an example predicted costmap.}
   \label{fig:teaser}
 \end{figure}
+
+\subsection{Problem Decomposition and Experimental Plan}
+Our three hypotheses translate into concrete experiments. For \textbf{H1 (Modality)}, we will hold the architecture and training schedule fixed and compare RGBD versus RGB-only inputs on both NYU and KITTI, reporting MAE, IoU, precision/recall, and F1 at $\tau{=}0.5$ alongside PR curves to analyze calibration across thresholds. For \textbf{H2 (Architecture)}, we will match parameter budgets across UNet, ViT, and Hybrid by adjusting base channel widths and transformer depth, then compare accuracy, FLOPs, and latency; this isolates representational differences from capacity. For \textbf{H3 (Objective)}, we will ablate L1 versus L1+Dice and optionally add a boundary-aware term; we expect L1+Dice to improve occupied-region fidelity and thin obstacles. Training follows the same splits used here (NYU: 523/131; KITTI: 438/433). Risks include domain shift and class imbalance outdoors; we mitigate with transfer learning (NYU$\rightarrow$KITTI) and augmentation (random brightness/contrast, flips, small perspective jitter). Success criteria are: (i) NYU F1 $\geq$ 0.98 for the best model; (ii) KITTI IoU $\geq$ 0.53 with F1 $\geq$ 0.65; and (iii) real-time feasibility on a single GPU (\(\leq\) 10 ms/frame for 256$\times$256 RGBD).
+
+\subsection{Classical Baseline and Training Setup}
+The classical depth-to-cost baseline thresholds depth to mark obstacles, applies morphology to close holes and dilate by a robot footprint, and computes a distance transform to produce a continuous cost map normalized to $[0,1]$. This provides an interpretable, planner-compatible reference and informs error modes (such as thin obstacles, sensor noise, etc.). All learning models use Adam, L1+Dice loss, and \texttt{sigmoid} activation before regression and thresholding; metrics default to $\tau{=}0.5$ with PR curves computed for sensitivity analysis. Unless otherwise noted, we train with batch sizes tuned per GPU memory, cosine or step LR schedules around 1e-3 initial rate, and early stopping on validation F1. We profile params, FLOPs, and latency to quantify deployability; UNet runs at 1.75 ms/frame on a V100 at $\sim$571 FPS, while ViT/Hybrid trade a modest latency increase for improved accuracy.
+
+
 
 \section{Next Steps}
   \textbf{Near-term (1--2 weeks).} Run a classical depth-to-cost baseline and add it to Tables~\ref{tab:nyu_results}--\ref{tab:kitti_results}; perform a hyperparameter sweep (lr, batch size, $\lambda_d$, data augmentations); and enable boundary or focal terms to raise KITTI recall for Hybrid without sacrificing precision.\par
