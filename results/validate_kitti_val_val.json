@@ -1,0 +1,712 @@
+{
+  "aggregate": {
+    "dir": "predictions\\kitti\\val",
+    "count": 50,
+    "exists_rate": 1.0,
+    "degenerate_rate": 1.0,
+    "mean_of_means": 1.0,
+    "mean_of_stds": 0.0
+  },
+  "samples": [
+    {
+      "stem": "000000",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000001",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000002",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000003",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000004",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000005",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000006",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000007",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000008",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000009",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000010",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000011",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000012",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000013",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000014",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000015",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000016",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000017",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000018",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000019",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000020",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000021",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000022",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000023",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000024",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000025",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000026",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000027",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000028",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000029",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000030",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000031",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000032",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000033",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000034",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000035",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000036",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000037",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000038",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000039",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000040",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000041",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000042",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000043",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000044",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000045",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000046",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000047",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000048",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    },
+    {
+      "stem": "000049",
+      "exists": true,
+      "shape": [
+        256,
+        256
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "unique": 1,
+      "degenerate": true
+    }
+  ]
+}

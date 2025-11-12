@@ -1,0 +1,32 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\begin{document}
+\section*{Final Project Task Matrix (Assignment + Acceptance Criteria)}
+This document mirrors the proposal/milestone plan and the final-report rubric. Each task lists owner(s), objective, key steps, deliverables, and acceptance criteria (AC). Required tasks are marked [R], optional [O].
+
+\subsection*{Rut}
+\begin{itemize}[leftmargin=*]
+  \item[\textbf{[R]}] Planner-in-the-loop infrastructure (A* and RRT*): \texttt{scripts/planner\_a\_star.py}, \texttt{scripts/planner\_rrt\_star.py}, \texttt{scripts/planner\_eval.py}. AC: metrics JSON/CSV for $\ge$10 scenes/dataset with success, collisions (if applicable), path length/cost, time.
+  \item[\textbf{[R]}] Reproducibility/automation: orchestration entrypoint (e.g., \texttt{scripts/run\_all.py}); pinned requirements; seeds/config hashes. AC: clean env reproduces val metrics within \(\pm 0.5\) IoU.
+  \item[\textbf{[R]}] Report assembly: integrate baseline rows, H1--H3 ablations, PR curves, planner metrics, profiling. AC: 6--8 pages main text; all figures/tables referenced.
+  \item[\textbf{[R]}] Team Contributions table and Reproducibility detail. AC: table contains concrete technical bullets per member; reproducibility checklist present.
+\end{itemize}
+
+\subsection*{Ibrahim}
+\begin{itemize}[leftmargin=*]
+  \item[\textbf{[R]}] Hybrid profiling (params/FLOPs/latency); Hybrid H2/H3; cross-domain; qualitative panels.
+\end{itemize}
+
+\subsection*{Meera}
+\begin{itemize}[leftmargin=*]
+  \item[\textbf{[R]}] ViT PR curves/AUPRC and calibration; H1/H3; cross-domain; profiling.
+\end{itemize}
+
+\subsection*{Vineet}
+\begin{itemize}[leftmargin=*]
+  \item[\textbf{[R]}] Classical baseline metrics (NYU/KITTI); UNet H1/H3; cross-domain; robustness tests.
+\end{itemize}
+
+\end{document}

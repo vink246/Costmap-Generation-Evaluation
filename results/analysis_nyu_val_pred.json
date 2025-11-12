@@ -1,0 +1,22 @@
+{
+  "dataset": "nyu",
+  "split": "val",
+  "pred_dir": "predictions\\nyu\\val",
+  "num_samples": 50,
+  "threshold": 0.5,
+  "label_mean": 0.4546305537223816,
+  "label_std": 0.20296749472618103,
+  "label_min": 1.1135194100120316e-08,
+  "label_max": 0.9888647794723511,
+  "pred_mean": 0.4568771421909332,
+  "pred_std": 0.2040673941373825,
+  "pred_min": 2.7675359781653697e-09,
+  "pred_max": 0.9972324371337891,
+  "mae_mean": 0.0028430065140128136,
+  "mae_std": 0.0019507705001160502,
+  "binary_iou_mean": 0.9868749993832031,
+  "binary_iou_std": 0.0,
+  "kl_label_to_pred": 0.0008899216032696351,
+  "kl_pred_to_label": 0.00093148717253999,
+  "histogram_png": "docs\\figures\\hist_nyu_val_pred.png"
+}

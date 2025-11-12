@@ -1,0 +1,9 @@
+planner,success_astar,success_rrtstar,astar_time_ms,rrtstar_time_ms,astar_path_len_cells,rrtstar_path_len_cells,astar_cost_sum,rrtstar_cost_sum,reason_astar,reason_rrtstar,file,stem
+both,False,False,,330.0994000164792,,,,,start_or_goal_in_collision,timeout_rrtstar,data\processed\kitti\val\000000.npz,000000
+both,True,True,0.5815000040456653,49.25640000146814,39.55634918610405,49.98787478566038,15.647056579589844,7.166267395019531,,,data\processed\kitti\val\000001.npz,000001
+both,False,False,,39.06900002039038,,,,,start_or_goal_in_collision,timeout_rrtstar,data\processed\kitti\val\000002.npz,000002
+both,True,True,0.06970000686123967,0.47339999582618475,5.82842712474619,5.385164807134504,1.9723817110061646,1.000523328781128,,,data\processed\kitti\val\000003.npz,000003
+both,True,True,0.3538999881129712,11.804099980508909,22.82842712474619,30.75279909140039,9.217856407165527,5.03214693069458,,,data\processed\kitti\val\000004.npz,000004
+both,True,True,3.7075000000186265,17.104400001699105,66.94112549695421,84.90395009566659,21.11805534362793,9.260196685791016,,,data\processed\kitti\val\000005.npz,000005
+both,False,False,,37.77990001253784,,,,,start_or_goal_in_collision,timeout_rrtstar,data\processed\kitti\val\000006.npz,000006
+both,True,True,0.4718000127468258,1.6057000029832125,23.65685424949238,25.103670129187275,7.82008171081543,3.5470938682556152,,,data\processed\kitti\val\000007.npz,000007

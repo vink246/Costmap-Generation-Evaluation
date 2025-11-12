@@ -1,0 +1,8 @@
+dataset,method,variant,threshold,mae,iou,precision,recall,f1,params_m,source
+nyu,UNet,baseline,0.5,0.0139,0.9168,0.9526,0.9607,0.9566,4.2,milestone_report.tex
+nyu,ViT,baseline,0.5,0.0063,0.9750,0.9880,0.9860,0.9870,10.8,milestone_report.tex
+nyu,Hybrid,baseline,0.5,0.0088,0.9680,0.9830,0.9840,0.9840,,milestone_report.tex
+kitti,UNet,kitti_only,0.5,0.2083,0.4803,0.6148,0.6989,0.6384,4.2,milestone_report.tex
+kitti,UNet,nyu_to_kitti_tl,0.5,0.2015,0.4999,0.6313,0.6956,0.6514,4.2,milestone_report.tex
+kitti,ViT,baseline,0.5,0.1890,0.4940,0.5990,0.7230,0.6500,10.8,milestone_report.tex
+kitti,Hybrid,baseline,0.5,0.1740,0.5270,0.7090,0.5850,0.6360,,milestone_report.tex

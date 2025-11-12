@@ -1,0 +1,85 @@
+{
+  "args": {
+    "dataset": "nyu",
+    "split": "val",
+    "processed_root": "data\\processed",
+    "pred_dir": null,
+    "planner": "rrtstar",
+    "threshold": 0.5,
+    "inflation_radius": 2,
+    "rrt_max_iter": 300,
+    "rrt_step_size": 2.5,
+    "rrt_goal_radius": 3.0,
+    "rrt_neighbor_radius": 6.0,
+    "rrt_goal_sample_rate": 0.1,
+    "num_scenes": 5,
+    "seed": 42,
+    "out": "outputs\\planner_eval"
+  },
+  "meta": {
+    "created_at": "2025-11-09T18:02:28.994980Z",
+    "git_commit": "a5fc826",
+    "source": "labels",
+    "seed": 42
+  },
+  "aggregate": {
+    "num_scenes": 5,
+    "success_rate": 0.6,
+    "mean_time_ms": 9.853279998060316,
+    "mean_path_len_cells": 40.03336809769658,
+    "mean_cost_sum": 6.886842091878255,
+    "elapsed_ms_total": 64.58760000532493
+  },
+  "per_scene": [
+    {
+      "planner": "rrtstar",
+      "success": true,
+      "time_ms": 2.9850999999325722,
+      "path_len_cells": 50.385986403784116,
+      "path_cost_sum": 9.0842924118042,
+      "reason": null,
+      "file": "data\\processed\\nyu\\val\\000000.npz",
+      "stem": "000000"
+    },
+    {
+      "planner": "rrtstar",
+      "success": true,
+      "time_ms": 4.285200004233047,
+      "path_len_cells": 33.06711003100988,
+      "path_cost_sum": 6.212872505187988,
+      "reason": null,
+      "file": "data\\processed\\nyu\\val\\000001.npz",
+      "stem": "000001"
+    },
+    {
+      "planner": "rrtstar",
+      "success": false,
+      "time_ms": 7.346800004597753,
+      "path_len_cells": null,
+      "path_cost_sum": null,
+      "reason": "timeout_rrtstar",
+      "file": "data\\processed\\nyu\\val\\000002.npz",
+      "stem": "000002"
+    },
+    {
+      "planner": "rrtstar",
+      "success": false,
+      "time_ms": 31.080399989150465,
+      "path_len_cells": null,
+      "path_cost_sum": null,
+      "reason": "timeout_rrtstar",
+      "file": "data\\processed\\nyu\\val\\000003.npz",
+      "stem": "000003"
+    },
+    {
+      "planner": "rrtstar",
+      "success": true,
+      "time_ms": 3.568899992387742,
+      "path_len_cells": 36.64700785829576,
+      "path_cost_sum": 5.363361358642578,
+      "reason": null,
+      "file": "data\\processed\\nyu\\val\\000004.npz",
+      "stem": "000004"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+planner,success,time_ms,path_len_cells,path_cost_sum,reason,file,stem
+rrtstar,True,2.9850999999325722,50.385986403784116,9.0842924118042,,data\processed\nyu\val\000000.npz,000000
+rrtstar,True,4.285200004233047,33.06711003100988,6.212872505187988,,data\processed\nyu\val\000001.npz,000001
+rrtstar,False,7.346800004597753,,,timeout_rrtstar,data\processed\nyu\val\000002.npz,000002
+rrtstar,False,31.080399989150465,,,timeout_rrtstar,data\processed\nyu\val\000003.npz,000003
+rrtstar,True,3.568899992387742,36.64700785829576,5.363361358642578,,data\processed\nyu\val\000004.npz,000004

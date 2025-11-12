@@ -1,0 +1,53 @@
+{
+  "args": {
+    "dataset": "kitti",
+    "split": "train",
+    "processed_root": "data\\processed",
+    "pred_dir": null,
+    "planner": "both",
+    "threshold": 0.5,
+    "inflation_radius": 2,
+    "num_scenes": 2,
+    "seed": 123,
+    "out": "outputs\\planner_eval"
+  },
+  "aggregate": {
+    "num_scenes": 2,
+    "success_rate_astar": 1.0,
+    "success_rate_rrtstar": 1.0,
+    "mean_time_ms_astar": 0.6176999886520207,
+    "mean_time_ms_rrtstar": 3.9623500051675364,
+    "mean_path_len_cells_astar": 38.40559159102153,
+    "mean_path_len_cells_rrtstar": 46.26232323067707,
+    "mean_cost_sum_astar": 10.207810640335083,
+    "elapsed_ms_total": 11.027300002751872
+  },
+  "per_scene": [
+    {
+      "planner": "both",
+      "success_astar": true,
+      "success_rrtstar": true,
+      "astar_time_ms": 0.5803999956697226,
+      "rrtstar_time_ms": 5.216700024902821,
+      "astar_path_len_cells": 51.9116882454314,
+      "rrtstar_path_len_cells": 62.95044219065055,
+      "astar_cost_sum": 15.08364486694336,
+      "rrtstar_cost_sum": null,
+      "file": "data\\processed\\kitti\\train\\000000.npz",
+      "stem": "000000"
+    },
+    {
+      "planner": "both",
+      "success_astar": true,
+      "success_rrtstar": true,
+      "astar_time_ms": 0.6549999816343188,
+      "rrtstar_time_ms": 2.7079999854322523,
+      "astar_path_len_cells": 24.899494936611667,
+      "rrtstar_path_len_cells": 29.574204270703586,
+      "astar_cost_sum": 5.331976413726807,
+      "rrtstar_cost_sum": null,
+      "file": "data\\processed\\kitti\\train\\000001.npz",
+      "stem": "000001"
+    }
+  ]
+}

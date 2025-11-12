@@ -1,0 +1,10 @@
+{
+  "checkpoint": "runs\\nyu_unet_rgb\\UNet_best.pth",
+  "dataset": "nyu",
+  "split": "val",
+  "model_module": "src.models.unet",
+  "model_class": "UNet",
+  "in_channels": 3,
+  "base_channels": 32,
+  "num_preds": 131
+}

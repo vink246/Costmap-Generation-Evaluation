@@ -1,0 +1,102 @@
+{
+  "args": {
+    "dataset": "kitti",
+    "split": "train",
+    "processed_root": "data\\processed",
+    "pred_dir": null,
+    "planner": "both",
+    "threshold": 0.5,
+    "inflation_radius": 2,
+    "num_scenes": 5,
+    "seed": 123,
+    "out": "outputs\\planner_eval"
+  },
+  "aggregate": {
+    "num_scenes": 5,
+    "success_rate_astar": 1.0,
+    "success_rate_rrtstar": 1.0,
+    "mean_time_ms_astar": 0.6408200075384229,
+    "mean_time_ms_rrtstar": 4.753480001818389,
+    "mean_path_len_cells_astar": 28.5445742854949,
+    "mean_path_len_cells_rrtstar": 34.19677690463314,
+    "mean_cost_sum_astar": 7.277598357200622,
+    "elapsed_ms_total": 31.166500004474074
+  },
+  "per_scene": [
+    {
+      "planner": "both",
+      "success_astar": true,
+      "success_rrtstar": true,
+      "astar_time_ms": 0.3364000003784895,
+      "rrtstar_time_ms": 6.156499992357567,
+      "astar_path_len_cells": 51.9116882454314,
+      "rrtstar_path_len_cells": 64.02292720265744,
+      "astar_cost_sum": 15.08364486694336,
+      "rrtstar_cost_sum": 9.631389617919922,
+      "reason_astar": null,
+      "reason_rrtstar": null,
+      "file": "data\\processed\\kitti\\train\\000000.npz",
+      "stem": "000000"
+    },
+    {
+      "planner": "both",
+      "success_astar": true,
+      "success_rrtstar": true,
+      "astar_time_ms": 1.022200012812391,
+      "rrtstar_time_ms": 4.753399989567697,
+      "astar_path_len_cells": 28.041630560342625,
+      "rrtstar_path_len_cells": 35.915007861932565,
+      "astar_cost_sum": 5.535190105438232,
+      "rrtstar_cost_sum": 3.553246021270752,
+      "reason_astar": null,
+      "reason_rrtstar": null,
+      "file": "data\\processed\\kitti\\train\\000001.npz",
+      "stem": "000001"
+    },
+    {
+      "planner": "both",
+      "success_astar": true,
+      "success_rrtstar": true,
+      "astar_time_ms": 0.19730001804418862,
+      "rrtstar_time_ms": 1.423700014129281,
+      "astar_path_len_cells": 12.071067811865476,
+      "rrtstar_path_len_cells": 11.981927989956592,
+      "astar_cost_sum": 1.5111130475997925,
+      "rrtstar_cost_sum": 0.6376169919967651,
+      "reason_astar": null,
+      "reason_rrtstar": null,
+      "file": "data\\processed\\kitti\\train\\000002.npz",
+      "stem": "000002"
+    },
+    {
+      "planner": "both",
+      "success_astar": true,
+      "success_rrtstar": true,
+      "astar_time_ms": 0.23480001254938543,
+      "rrtstar_time_ms": 0.9078000148292631,
+      "astar_path_len_cells": 13.485281374238571,
+      "rrtstar_path_len_cells": 17.73824917209232,
+      "astar_cost_sum": 2.046837329864502,
+      "rrtstar_cost_sum": 1.3636467456817627,
+      "reason_astar": null,
+      "reason_rrtstar": null,
+      "file": "data\\processed\\kitti\\train\\000003.npz",
+      "stem": "000003"
+    },
+    {
+      "planner": "both",
+      "success_astar": true,
+      "success_rrtstar": true,
+      "astar_time_ms": 1.4133999939076602,
+      "rrtstar_time_ms": 10.525999998208135,
+      "astar_path_len_cells": 37.21320343559643,
+      "rrtstar_path_len_cells": 41.325772296526786,
+      "astar_cost_sum": 12.211206436157227,
+      "rrtstar_cost_sum": 6.144156455993652,
+      "reason_astar": null,
+      "reason_rrtstar": null,
+      "file": "data\\processed\\kitti\\train\\000004.npz",
+      "stem": "000004"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "threshold": 0.5,
+  "notes": "Extracted from docs/milestone_report.tex tables as of 2025-11-09. Params(M) copied where provided; Hybrid params unknown (null). Verification pending.",
+  "datasets": {
+    "nyu": [
+      {
+        "method": "UNet",
+        "variant": "baseline",
+        "mae": 0.0139,
+        "iou": 0.9168,
+        "precision": 0.9526,
+        "recall": 0.9607,
+        "f1": 0.9566,
+        "params_m": 4.2
+      },
+      {
+        "method": "ViT",
+        "variant": "baseline",
+        "mae": 0.0063,
+        "iou": 0.9750,
+        "precision": 0.9880,
+        "recall": 0.9860,
+        "f1": 0.9870,
+        "params_m": 10.8
+      },
+      {
+        "method": "Hybrid",
+        "variant": "baseline",
+        "mae": 0.0088,
+        "iou": 0.9680,
+        "precision": 0.9830,
+        "recall": 0.9840,
+        "f1": 0.9840,
+        "params_m": null
+      }
+    ],
+    "kitti": [
+      {
+        "method": "UNet",
+        "variant": "kitti_only",
+        "mae": 0.2083,
+        "iou": 0.4803,
+        "precision": 0.6148,
+        "recall": 0.6989,
+        "f1": 0.6384,
+        "params_m": 4.2
+      },
+      {
+        "method": "UNet",
+        "variant": "nyu_to_kitti_tl",
+        "mae": 0.2015,
+        "iou": 0.4999,
+        "precision": 0.6313,
+        "recall": 0.6956,
+        "f1": 0.6514,
+        "params_m": 4.2
+      },
+      {
+        "method": "ViT",
+        "variant": "baseline",
+        "mae": 0.1890,
+        "iou": 0.4940,
+        "precision": 0.5990,
+        "recall": 0.7230,
+        "f1": 0.6500,
+        "params_m": 10.8
+      },
+      {
+        "method": "Hybrid",
+        "variant": "baseline",
+        "mae": 0.1740,
+        "iou": 0.5270,
+        "precision": 0.7090,
+        "recall": 0.5850,
+        "f1": 0.6360,
+        "params_m": null
+      }
+    ]
+  }
+}

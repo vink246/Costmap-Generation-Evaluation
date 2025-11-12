@@ -1,0 +1,3 @@
+planner,success_astar,success_rrtstar,astar_time_ms,rrtstar_time_ms,astar_path_len_cells,rrtstar_path_len_cells,astar_cost_sum,rrtstar_cost_sum,file,stem
+both,True,True,0.5803999956697226,5.216700024902821,51.9116882454314,62.95044219065055,15.08364486694336,,data\processed\kitti\train\000000.npz,000000
+both,True,True,0.6549999816343188,2.7079999854322523,24.899494936611667,29.574204270703586,5.331976413726807,,data\processed\kitti\train\000001.npz,000001

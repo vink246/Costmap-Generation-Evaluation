@@ -93,10 +93,132 @@ python -m src.train.train --config configs/train_nyu_hybrid.yaml
 - GPU support: install a CUDA-enabled torch build matching your system; CPU works but is slower.
 - No `.npz` found: confirm you’ve run the build scripts and that configs point to the correct roots.
 
-### Planner evaluation (next step)
-Planner-based metrics (A*/RRT*) are not included yet. Suggested structure when adding:
-- `src/planning/astar.py`, `src/planning/rrt_star.py`
-- `src/eval/evaluate_planner.py` to run planners on predicted costmaps and report success, collisions, path length, and planning time.
+### Orchestration entrypoint (automation)
+Use the lightweight orchestration script to reproduce planner metrics end-to-end without remembering all flags:
+
+```powershell
+# Labels (ground-truth) or predictions via --pred-dir
+python scripts/run_all.py --stage planner --dataset nyu --split val --planner both --threshold 0.5 --inflation-radius 2 --num-scenes 50 --seed 42
+python scripts/run_all.py --stage planner --dataset kitti --split val --planner both --threshold 0.5 --inflation-radius 2 --num-scenes 100 --seed 42 --pred-dir predictions\kitti\unet_rgbd_retrain_full\val
+```
+
+This wraps `scripts/planner_eval.py` and writes per-scene CSVs and an aggregate JSON under `outputs/planner_eval/` with provenance metadata (UTC timestamp, git hash if available, seed, run tag/source).
+
+### Current Planner & Results Pipeline (Implemented)
+The milestone work added light-weight planners and evaluation scripts:
+- `scripts/planner_a_star.py`, `scripts/planner_rrt_star.py` – grid A* and RRT* with obstacle inflation, goal bias, rewiring, path cost accumulation.
+- `scripts/planner_eval.py` – runs A*, RRT*, or both across processed label costmaps or predicted costmaps (`--pred-dir`). Saves per-scene CSV and an aggregate JSON.
+- `scripts/aggregate_planner_summaries.py` – consolidates all `summary_*.json` into `results/planner_sweeps.csv`.
+- `scripts/make_latex_planner_tables.py` – renders LaTeX tables from the consolidated CSV.
+
+Output examples (after running sweeps):
+- `outputs/planner_eval/summary_kitti_val_both_thr0.5_infl2_labels_n433.json`
+- `outputs/planner_eval/summary_nyu_val_both_thr0.6_infl2_pred_n131.json`
+- Aggregated: `results/planner_sweeps.csv`
+- LaTeX: `docs/tables/planner_tables.tex`
+
+Each summary JSON now includes reproducibility metadata (`meta` block) with:
+```json
+{
+  "meta": {
+    "created_at": "2025-11-09T12:34:56.123Z",
+    "git_commit": "abc1234",
+    "source": "labels" | "pred",
+    "seed": 42
+  },
+  "args": { ... },
+  "aggregate": { ... },
+  "per_scene": [ ... ]
+}
+```
+
+To regenerate planner tables end-to-end:
+```powershell
+# Labels (ground-truth) sweeps for NYU & KITTI val
+python scripts/planner_eval.py --dataset nyu --split val --planner both --threshold 0.4 --inflation-radius 2 --num-scenes 131
+python scripts/planner_eval.py --dataset nyu --split val --planner both --threshold 0.5 --inflation-radius 2 --num-scenes 131
+python scripts/planner_eval.py --dataset nyu --split val --planner both --threshold 0.6 --inflation-radius 2 --num-scenes 131
+python scripts/planner_eval.py --dataset kitti --split val --planner both --threshold 0.4 --inflation-radius 2 --num-scenes 433
+python scripts/planner_eval.py --dataset kitti --split val --planner both --threshold 0.5 --inflation-radius 2 --num-scenes 433
+python scripts/planner_eval.py --dataset kitti --split val --planner both --threshold 0.6 --inflation-radius 2 --num-scenes 433
+
+# Aggregate & render LaTeX
+python scripts/aggregate_planner_summaries.py
+python scripts/make_latex_planner_tables.py
+```
+
+For predicted costmaps, add `--pred-dir <path_to_predictions>` (same stem names as processed). Filenames automatically include `pred` vs `labels` tag to avoid collisions.
+
+## Reproducibility Metadata & Table Regeneration
+
+We embed minimal provenance in generated artifacts:
+- Git commit: short hash at generation time (if repository available).
+- UTC timestamp (ISO 8601, suffixed with `Z`).
+- Seed (for planner random sampling and any stochastic components).
+- Source tag (`labels` or `pred`).
+
+Scripts instrumented with metadata:
+- `scripts/planner_eval.py`
+- `scripts/baseline_depth_costmaps.py`
+- `scripts/pr_curves.py`
+
+LaTeX tables can be regenerated deterministically from structured CSV/JSON:
+```powershell
+# Perception baselines (from milestone report metrics)
+python scripts/make_latex_tables.py
+# Planner tables (after sweeps)
+python scripts/make_latex_planner_tables.py
+```
+
+PR curves (baseline or learned models):
+```powershell
+# After generating predictions into predictions/<dataset>/<model_tag>/<split>/
+python scripts/pr_curves.py --dataset nyu --split val --processed-root data\processed --pred-dir predictions\nyu\val --out results\pr_curves
+python scripts/pr_curves.py --dataset kitti --split val --processed-root data\processed --pred-dir predictions\kitti\val --out results\pr_curves
+```
+
+Prediction generation for learned models (given a checkpoint):
+```powershell
+python scripts/infer_and_save.py --checkpoint runs/nyu_unet/unet_best.pth --dataset nyu --split val --model-module src.models.unet --model-class UNet --model-tag unet
+python scripts/infer_and_save.py --checkpoint runs/kitti_vit/vit_best.pth --dataset kitti --split val --model-module src.models.vit --model-class ViT --model-tag vit
+```
+
+Then run planner eval on predicted maps:
+```powershell
+python scripts/planner_eval.py --dataset nyu --split val --planner both --threshold 0.5 --inflation-radius 2 --num-scenes 131 --pred-dir predictions\nyu\unet\val
+```
+
+Minimal Config Fingerprint (optional extension): hash your YAML config to include in metadata:
+```powershell
+(Get-FileHash configs\train_nyu_unet.yaml -Algorithm SHA256).Hash
+```
+This can be manually appended to JSON metadata or integrated into scripts.
+
+Recommended: keep a single regeneration script (e.g. `scripts/run_all.py`) that calls the sequence above to produce fresh artifacts from processed data and checkpoints.
+
+---
+
+## Pinned requirements (exact freeze)
+
+For deterministic environments, capture an exact lockfile of your current setup and reuse it on fresh machines.
+
+Create a lockfile from an activated, working environment:
+
+```powershell
+# From the repo root, with your venv/conda env activated
+pip freeze > requirements.lock.txt
+```
+
+To recreate the exact environment later:
+
+```powershell
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -r requirements.lock.txt
+```
+
+Notes:
+- Torch/CUDA builds vary by system. If GPU is needed, install the CUDA-matched torch wheels first, then run `pip freeze` again to update the lockfile.
+- We also include a lightweight, unpinned `requirements.txt` for general development; prefer the lockfile for paper results.
 
 ---
 

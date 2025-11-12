@@ -1,4 +1,5 @@
 import os
+import platform
 import argparse
 import yaml
 import importlib
@@ -20,9 +21,9 @@ def get_device():
     return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-def build_dataloaders(data_root, dataset_name, batch_size, num_workers):
-    train_ds = CostmapPairsNPZ(data_root, split='train', dataset=dataset_name)
-    val_ds = CostmapPairsNPZ(data_root, split='val', dataset=dataset_name)
+def build_dataloaders(data_root, dataset_name, batch_size, num_workers, channels: str):
+    train_ds = CostmapPairsNPZ(data_root, split='train', dataset=dataset_name, channels=channels)
+    val_ds = CostmapPairsNPZ(data_root, split='val', dataset=dataset_name, channels=channels)
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
     val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
     return train_dl, val_dl
@@ -103,12 +104,32 @@ def main():
     batch_size = cfg.get('batch_size', 16)
     epochs = cfg.get('epochs', 5)
     num_workers = cfg.get('num_workers', 4)
+    # On Windows, multi-worker DataLoader can hang in some shells; default to 0 unless explicitly set lower
+    if platform.system() == 'Windows' and num_workers > 0:
+        print(f"[info] Windows detected; forcing num_workers=0 to avoid DataLoader hang (was {num_workers})", flush=True)
+        num_workers = 0
     model_module = cfg.get('model_module', 'src.models.unet')
     model_class = cfg.get('model_class', 'UNet')
     model_kwargs = cfg.get('model_kwargs', {'in_channels': 4, 'out_channels': 1, 'base_channels': 32})
     lr = cfg.get('lr', 1e-3)
 
-    train_dl, val_dl = build_dataloaders(data_root, dataset_name, batch_size, num_workers)
+    # modality selection (RGB-only ablation)
+    rgb_only = cfg.get('rgb_only', False)
+    dataset_channels = 'rgb' if rgb_only else 'rgbd'
+
+    # if rgb_only but model kwargs still claim 4 channels, override to 3
+    if rgb_only and model_kwargs.get('in_channels', 4) != 3:
+        model_kwargs['in_channels'] = 3
+
+    train_dl, val_dl = build_dataloaders(data_root, dataset_name, batch_size, num_workers, dataset_channels)
+    try:
+        n_train = len(train_dl.dataset)
+        n_val = len(val_dl.dataset)
+        b_train = len(train_dl)
+        b_val = len(val_dl)
+        print(f"[data] {dataset_name} | channels={dataset_channels} | train={n_train} (batches={b_train}), val={n_val} (batches={b_val}) | device={device}", flush=True)
+    except Exception as e:
+        print(f"[warn] Could not summarize dataloaders: {e}", flush=True)
     # Dynamically import model class; teammates should implement the class in the module below
     ModelClass = getattr(importlib.import_module(model_module), model_class)
     model = ModelClass(**model_kwargs).to(device)
@@ -118,7 +139,9 @@ def main():
     best_f1 = -1
     for epoch in range(1, epochs+1):
         model.train()
-        for img, cm in train_dl:
+        total_batches = len(train_dl)
+        print(f"[epoch {epoch}/{epochs}] starting training | total_batches={total_batches}", flush=True)
+        for bi, (img, cm) in enumerate(train_dl):
             img = img.to(device)
             cm = cm.to(device)
             pred_full = model(img)
@@ -131,10 +154,17 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            if (bi == 0) or ((bi + 1) % 50 == 0) or ((bi + 1) == total_batches):
+                msg = f"[epoch {epoch}] batch {bi+1}/{total_batches} | loss={logs.get('total', 0):.4f}"
+                if 'l1' in logs: msg += f", l1={logs['l1']:.4f}"
+                if 'dice' in logs: msg += f", dice={logs['dice']:.4f}"
+                if 'boundary' in logs: msg += f", boundary={logs['boundary']:.4f}"
+                if 'bce' in logs: msg += f", bce={logs['bce']:.4f}"
+                print(msg, flush=True)
 
         # Eval
         metrics = evaluate(model, val_dl, device)
-        print(f"Epoch {epoch}: val metrics {metrics}")
+        print(f"[epoch {epoch}] val metrics {metrics}", flush=True)
         # Save best by F1
         if metrics['f1'] > best_f1:
             best_f1 = metrics['f1']

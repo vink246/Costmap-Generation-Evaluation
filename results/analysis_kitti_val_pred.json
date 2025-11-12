@@ -1,0 +1,22 @@
+{
+  "dataset": "kitti",
+  "split": "val",
+  "pred_dir": "predictions\\labels_as_pred\\kitti\\val",
+  "num_samples": 100,
+  "threshold": 0.5,
+  "label_mean": 0.5241870284080505,
+  "label_std": 0.24217075109481812,
+  "label_min": 1.1135194100120316e-08,
+  "label_max": 1.0,
+  "pred_mean": 0.5241870284080505,
+  "pred_std": 0.24217075109481812,
+  "pred_min": 1.1135194100120316e-08,
+  "pred_max": 1.0,
+  "mae_mean": 0.0,
+  "mae_std": 0.0,
+  "binary_iou_mean": 0.9999999995206224,
+  "binary_iou_std": 7.698832370318997e-11,
+  "kl_label_to_pred": 0.0,
+  "kl_pred_to_label": 0.0,
+  "histogram_png": "docs\\figures\\hist_kitti_val_pred.png"
+}

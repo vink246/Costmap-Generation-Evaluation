@@ -1,0 +1,22 @@
+{
+  "dataset": "kitti",
+  "split": "val",
+  "pred_dir": "predictions\\kitti\\unet_rgbd_retrain\\val",
+  "num_samples": 8,
+  "threshold": 0.5,
+  "label_mean": 0.5350174903869629,
+  "label_std": 0.24534378945827484,
+  "label_min": 1.3840913304363767e-08,
+  "label_max": 1.0,
+  "pred_mean": 0.554990291595459,
+  "pred_std": 0.23320183157920837,
+  "pred_min": 0.03909171372652054,
+  "pred_max": 0.9789873957633972,
+  "mae_mean": 0.34417134523391724,
+  "mae_std": 0.23256328701972961,
+  "binary_iou_mean": 0.2583837683098178,
+  "binary_iou_std": 0.032522992312829464,
+  "kl_label_to_pred": 0.27783964176734893,
+  "kl_pred_to_label": 0.07563887593705715,
+  "histogram_png": "docs\\figures\\hist_kitti_val_unet_rgbd_retrain.png"
+}

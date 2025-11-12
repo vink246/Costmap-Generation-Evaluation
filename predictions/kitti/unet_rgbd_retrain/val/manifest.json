@@ -1,0 +1,16 @@
+{
+  "checkpoint": "runs/kitti_unet_rgbd_retrain/UNet_best.pth",
+  "dataset": "kitti",
+  "split": "val",
+  "model_module": "src.models.unet",
+  "model_class": "UNet",
+  "in_channels": 4,
+  "base_channels": 32,
+  "num_preds": 8,
+  "first_batch_stats": {
+    "logits_mean": 0.3102441430091858,
+    "logits_std": 1.2178839445114136,
+    "sigmoid_mean": 0.5521765351295471,
+    "sigmoid_std": 0.23629209399223328
+  }
+}
