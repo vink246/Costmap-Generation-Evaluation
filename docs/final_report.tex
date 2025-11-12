@@ -115,13 +115,15 @@ NYU ground-truth costmaps present a smooth traversability surface: costs increas
 
 % \section*{References}
 \begin{thebibliography}{9}\itemsep0pt
-\bibitem{unet} Ronneberger, O. et al. U-Net. MICCAI 2015.
-\bibitem{vit} Dosovitskiy, A. et al. ViT. ICLR 2021.
-\bibitem{meng2023} Meng, X. et al. TerrainNet. 2023.
-\bibitem{qiu2025} Qiu, R., Lloyd, V. Modified U-Net for Mars Rover Navigation. 2025.
-\bibitem{chen2022} Chen, C. et al. Trans4Map. 2022.
-\bibitem{bochare2025} Bochare, A. Camera-Only BEV Perception. 2025.
-\bibitem{mao2025} Mao, L. et al. PACER. 2025.
+\bibitem{unet} O. Ronneberger, P. Fischer, and T. Brox. U-Net: Convolutional Networks for Biomedical Image Segmentation. In Proc. MICCAI, 2015.
+\bibitem{vit} A. Dosovitskiy et al. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In Proc. ICLR, 2021.
+\bibitem{meng2023} X. Meng et al. TerrainNet: Learning Terrain Traversability from Vision for Autonomous Navigation. 2023.
+\bibitem{qiu2025} R. Qiu and V. Lloyd. Modified U-Net for Mars Rover Navigation. 2025.
+\bibitem{chen2022} C. Chen et al. Trans4Map: Revisiting Transformer for Real-Time HD Map Construction. 2022.
+\bibitem{bochare2025} A. Bochare. Camera-Only BEV Perception: A Survey. 2025.
+\bibitem{mao2025} L. Mao et al. PACER: Preference-Conditioned Costmaps for Robot Navigation. 2025.
+\bibitem{hart1968} P. E. Hart, N. J. Nilsson, and B. Raphael. A Formal Basis for the Heuristic Determination of Minimum Cost Paths. IEEE Trans. Systems Science and Cybernetics, 1968.
+\bibitem{karaman2011} S. Karaman and E. Frazzoli. Sampling-based Algorithms for Optimal Motion Planning. Intl. J. Robotics Research, 2011.
 \end{thebibliography}
 
 \appendix
@@ -138,6 +140,24 @@ NYU ground-truth costmaps present a smooth traversability surface: costs increas
   \centering
   \includegraphics[width=0.6\linewidth]{figures/hist_kitti_val_pred.png}
   \caption{KITTI validation prediction cost distribution ($n=433$). Shown is the \emph{pre-fix} distribution that was saturated near cost 1.0, explaining zero planner success. After the inference fix (Section~\ref{sec:planner}), the distribution preserves dynamic range (KL\textsubscript{L||P}$=0.090$, KL\textsubscript{P||L}$=0.056$) and supports A*/RRT* success $\approx 0.74$ at $\tau=0.5$ (100-scene sample).}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  % NYU appendix qualitative (binarized and difference views)
+  \includegraphics[width=0.95\linewidth]{figures/bin_nyu_nyu_val_pred_000000.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/diff_nyu_nyu_val_pred_000000.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/bin_nyu_nyu_val_unet_rgb_000000.png}
+  \caption{NYU appendix panels. Top: binarized RGBD prediction vs. label; middle: difference heatmap (prediction-label); bottom: binarized RGB-only example. These illustrate high fidelity for RGBD and mid-cost flattening for RGB-only that reduces planner success.}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  % KITTI appendix qualitative (post-fix, binarized and difference views)
+  \includegraphics[width=0.95\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/diff_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000004.png}
+  \caption{KITTI appendix panels (post-inference fix). Binarized predictions (inflation 2, $\tau\in[0.5,0.6]$) show restored free-space connectivity; difference maps highlight residual false positives near start/goal pockets, aligning with $\approx$0.73--0.84 success (Tables~\ref{tab:kitti_planner_labels}--\ref{tab:kitti_planner_pred_pred}).}
 \end{figure}
 
 \end{document}
