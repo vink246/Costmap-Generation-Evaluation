@@ -144,20 +144,40 @@ NYU ground-truth costmaps present a smooth traversability surface: costs increas
 
 \begin{figure}[h]
   \centering
-  % NYU appendix qualitative (binarized and difference views)
-  \includegraphics[width=0.95\linewidth]{figures/bin_nyu_nyu_val_pred_000000.png}\\
-  \includegraphics[width=0.95\linewidth]{figures/diff_nyu_nyu_val_pred_000000.png}\\
-  \includegraphics[width=0.95\linewidth]{figures/bin_nyu_nyu_val_unet_rgb_000000.png}
-  \caption{NYU appendix panels. Top: binarized RGBD prediction vs. label; middle: difference heatmap (prediction-label); bottom: binarized RGB-only example. These illustrate high fidelity for RGBD and mid-cost flattening for RGB-only that reduces planner success.}
+  % NYU appendix qualitative (compact 3-across grid)
+  \begin{minipage}[t]{0.32\linewidth}\centering
+    \includegraphics[width=\linewidth]{figures/bin_nyu_nyu_val_pred_000000.png}\\
+    {\small Binarized RGBD (\(\tau{=}0.5\))}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\linewidth}\centering
+    \includegraphics[width=\linewidth]{figures/diff_nyu_nyu_val_pred_000000.png}\\
+    {\small Difference (Label$-$Pred)}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\linewidth}\centering
+    \includegraphics[width=\linewidth]{figures/bin_nyu_nyu_val_unet_rgb_000000.png}\\
+    {\small Binarized RGB-only}
+  \end{minipage}
+  \caption{NYU appendix panels. RGBD predictions preserve mid-cost structure and produce clean free-space after binarization; the RGB-only model flattens mid-costs, which reduces connectivity and planner success compared to RGBD.}
 \end{figure}
 
 \begin{figure}[h]
   \centering
-  % KITTI appendix qualitative (post-fix, binarized and difference views)
-  \includegraphics[width=0.95\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
-  \includegraphics[width=0.95\linewidth]{figures/diff_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
-  \includegraphics[width=0.95\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000004.png}
+  % KITTI appendix qualitative (post-fix, compact 3-across)
+  \begin{minipage}[t]{0.32\linewidth}\centering
+    \includegraphics[width=\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
+    {\small Binarized Pred (\(\tau{=}0.5\))}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\linewidth}\centering
+    \includegraphics[width=\linewidth]{figures/diff_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
+    {\small Difference (Label$-$Pred)}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\linewidth}\centering
+    \includegraphics[width=\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000004.png}\\
+    {\small Binarized Pred (alt scene)}
+  \end{minipage}
   \caption{KITTI appendix panels (post-inference fix). Binarized predictions (inflation 2, $\tau\in[0.5,0.6]$) show restored free-space connectivity; difference maps highlight residual false positives near start/goal pockets, aligning with $\approx$0.73--0.84 success (Tables~\ref{tab:kitti_planner_labels}--\ref{tab:kitti_planner_pred_pred}).}
 \end{figure}
+
+\paragraph{Appendix figure analysis.} In NYU, RGBD predictions closely track label gradients: after thresholding the free-space boundary is smooth and corridors remain connected, consistent with planner success $\geq$0.969. The RGB-only model exhibits mid-cost flattening, which erodes corridor width and occasionally disconnects free-space, matching the observed 0.79--0.89 success. In KITTI, the post-fix predictions regain dynamic range; binarized maps reveal connected traversable regions at $\tau\in[0.5,0.6]$. Residual high-cost islands near the boundary (visible in the difference map) explain the remaining failures ($\approx$16--27\%). These are most impactful when start/goal land in or adjacent to such pockets.
 
 \end{document}
