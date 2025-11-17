@@ -50,6 +50,8 @@ def main():
 	ap.add_argument('--model-tag', default='unet')
 	ap.add_argument('--rgb-only', action='store_true', help='Use RGB-only channels (3) for dataset')
 	ap.add_argument('--limit', type=int, default=0, help='Optional cap on number of predictions to write (0=all)')
+	ap.add_argument('--depth', type=int, default=None, help='Depth- for vit')
+
 	args = ap.parse_args()
 
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -60,7 +62,7 @@ def main():
 	dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
 	ModelClass = getattr(importlib.import_module(args.model_module), args.model_class)
-	model = ModelClass(in_channels=args.in_channels, out_channels=args.out_channels, base_channels=args.base_channels)
+	model = ModelClass(in_channels=args.in_channels, out_channels=args.out_channels, base_channels=args.base_channels, depth=args.depth)
 	ckpt = torch.load(args.checkpoint, map_location=device)
 	model.load_state_dict(ckpt['model'])
 	model.to(device).eval()
