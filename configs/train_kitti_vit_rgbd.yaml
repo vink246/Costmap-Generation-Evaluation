@@ -1,8 +1,8 @@
-out_dir: runs/kitti_vit
+out_dir: runs/kitti_vit_rgbd
 data_root: data/processed
 dataset: kitti
 batch_size: 32 
-epochs: 35
+epochs: 50
 num_workers: 4 
 model_module: src.models.vit 
 model_class: ViT 

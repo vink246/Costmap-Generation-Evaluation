@@ -1,4 +1,4 @@
-out_dir: runs/nyu_vit
+out_dir: runs/nyu_vit_rgb
 data_root: data/processed
 dataset: nyu
 batch_size: 32
@@ -6,8 +6,10 @@ epochs: 50
 num_workers: 4
 model_module: src.models.vit
 model_class: ViT
+dataset_kwargs:
+  channels: rgb
 model_kwargs:
-  in_channels: 4
+  in_channels: 3
   out_channels: 1
   embed_dim: 256
   depth: 10
@@ -19,4 +21,3 @@ loss_weights:
   dice: 0.06
   boundary: 0.03
 
-   
