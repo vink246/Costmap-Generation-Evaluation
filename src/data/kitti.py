@@ -42,6 +42,36 @@ def read_velodyne_bin(bin_path: str):
         data = data[: (data.size // 4) * 4]
     pts = data.reshape(-1, 4)[:, :3]
     return pts
+def velodyne_to_depth_image(pts: np.ndarray, K: np.ndarray, H: int, W: int, max_depth_m: float):
+    """
+    Project LiDAR points (N,3) to a depth image of shape (H, W) using camera intrinsics K.
+    Points behind camera or beyond max_depth_m are ignored.
+    """
+    x, y, z = pts[:,0], pts[:,1], pts[:,2]
+
+    # Only keep points in front of camera
+    valid = z > 0
+    x, y, z = x[valid], y[valid], z[valid]
+
+    # Project to image plane
+    u = (K[0,0]*x/z + K[0,2]).astype(np.int32)
+    v = (K[1,1]*y/z + K[1,2]).astype(np.int32)
+
+    # Clip to image bounds
+    u = np.clip(u, 0, W-1)
+    v = np.clip(v, 0, H-1)
+
+    # Initialize depth image
+    depth_img = np.zeros((H, W), dtype=np.float32)
+
+    # Keep nearest point per pixel
+    for ui, vi, zi in zip(u, v, z):
+        if zi > max_depth_m:
+            continue
+        if depth_img[vi, ui] == 0 or zi < depth_img[vi, ui]:
+            depth_img[vi, ui] = zi
+
+    return depth_img
 
 
 def build_pairs(config_path: str, out_dir: str):
@@ -54,7 +84,7 @@ def build_pairs(config_path: str, out_dir: str):
     grid = tuple(cfg['costmap']['grid'])
     roi = cfg['roi']
     dilation = int(cfg['costmap']['dilation_radius_cells'])
-    max_depth_m = float(cfg['costmap']['max_depth_m'])
+    max_depth_m = float(cfg['costmap']['max_depth_m_kitti'])
 
     for split_name, drives in splits.items():
         for drive in drives:
@@ -82,7 +112,7 @@ def build_pairs(config_path: str, out_dir: str):
                     costmap = make_costmap_from_depth(depth_res, K, roi_cfg=roi, grid_hw=grid, dilation_radius=dilation, max_depth_m=max_depth_m)
 
                     rgbd = np.concatenate([img_res, depth_res[...,None]], axis=-1)
-                    rgbd_norm = normalize_rgbd(rgbd, mean, std)
+                    rgbd_norm = normalize_rgbd(rgbd, mean, std, max_depth=max_depth_m)
 
                     meta = {
                         'frame': os.path.basename(img_files[i]),
@@ -109,9 +139,10 @@ def build_pairs(config_path: str, out_dir: str):
 
                     img_res = resize_image(img, (H_resize, W_resize))
                     # No depth channel -> pad w/ zeros to create RGB+D
-                    depth_res = np.zeros((H_resize, W_resize), dtype=np.float32)
+                    # depth_res = np.zeros((H_resize, W_resize), dtype=np.float32)
+                    depth_res = velodyne_to_depth_image(pts, K, H_resize, W_resize, max_depth_m)
                     rgbd = np.concatenate([img_res, depth_res[..., None]], axis=-1)
-                    rgbd_norm = normalize_rgbd(rgbd, mean, std)
+                    rgbd_norm = normalize_rgbd(rgbd, mean, std, max_depth=max_depth_m)
 
                     meta = {
                         'frame': os.path.basename(img_files[i]),

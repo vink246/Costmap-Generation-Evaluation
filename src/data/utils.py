@@ -18,10 +18,16 @@ class Config:
         return self.d[k]
 
 
-def normalize_rgbd(img_rgbd: np.ndarray, mean, std):
+def normalize_rgbd(img_rgbd: np.ndarray, mean, std, max_depth=None):
     """Normalize RGB+D image with per-channel mean/std."""
     assert img_rgbd.shape[-1] in (1, 4), "Expected D or RGB+D"
     img = img_rgbd.astype(np.float32)
+    # scale RGB channels
+    if img.shape[-1] >= 3:
+        img[...,:3] /= 255.0
+    # scale depth channel
+    if img.shape[-1] == 4 and max_depth is not None:
+        img[...,3] = np.clip(img[...,3] / max_depth, 0.0, 1.0)
     mean = np.array(mean, dtype=np.float32)
     std = np.array(std, dtype=np.float32)
     return (img - mean) / std

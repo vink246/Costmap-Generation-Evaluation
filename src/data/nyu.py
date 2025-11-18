@@ -27,7 +27,7 @@ def build_pairs(config_path: str, out_dir: str):
     grid = tuple(cfg['costmap']['grid'])
     roi = cfg['roi']
     dilation = int(cfg['costmap']['dilation_radius_cells'])
-    max_depth_m = float(cfg['costmap']['max_depth_m'])
+    max_depth_m = float(cfg['costmap']['max_depth_m_nyu'])
 
     K = load_intrinsics_default()
 
@@ -67,7 +67,6 @@ def build_pairs(config_path: str, out_dir: str):
             n = len(pairs)
             out_split_dir = os.path.join(out_dir, 'nyu', split_name)
             os.makedirs(out_split_dir, exist_ok=True)
-
             for i, (img_path, depth_path) in enumerate(pairs):
                 img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
                 depth = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED).astype(np.float32) / 1000.0
@@ -77,7 +76,7 @@ def build_pairs(config_path: str, out_dir: str):
                 costmap = make_costmap_from_depth(depth_res, K, roi_cfg=roi, grid_hw=grid, dilation_radius=dilation, max_depth_m=max_depth_m)
 
                 rgbd = np.concatenate([img_res, depth_res[...,None]], axis=-1)
-                rgbd_norm = normalize_rgbd(rgbd, mean, std)
+                rgbd_norm = rgbd_norm = normalize_rgbd(rgbd, mean, std, max_depth=max_depth_m)
 
                 meta = {
                     'frame': os.path.basename(img_path),
