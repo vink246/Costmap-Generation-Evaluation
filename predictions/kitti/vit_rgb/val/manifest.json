@@ -1,0 +1,16 @@
+{
+  "checkpoint": "runs/kitti_vit_rgb/ViT_best.pth",
+  "dataset": "kitti",
+  "split": "val",
+  "model_module": "src.models.vit",
+  "model_class": "ViT",
+  "in_channels": 3,
+  "base_channels": 32,
+  "num_preds": 433,
+  "first_batch_stats": {
+    "logits_mean": 0.330586314201355,
+    "logits_std": 0.7423294186592102,
+    "sigmoid_mean": 0.5686265230178833,
+    "sigmoid_std": 0.15469208359718323
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "checkpoint": "runs/nyu_vit_rgb/ViT_best.pth",
+  "dataset": "nyu",
+  "split": "val",
+  "model_module": "src.models.vit",
+  "model_class": "ViT",
+  "in_channels": 3,
+  "base_channels": 32,
+  "num_preds": 131,
+  "first_batch_stats": {
+    "logits_mean": -0.2045072317123413,
+    "logits_std": 1.033400058746338,
+    "sigmoid_mean": 0.45582932233810425,
+    "sigmoid_std": 0.2059890627861023
+  }
+}
