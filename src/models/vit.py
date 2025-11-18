@@ -196,7 +196,7 @@ class ViT(nn.Module):
         self.encoder = TransformerEncoder(embed_dim, num_heads, depth)
 
         # Convolutional decoder to reconstruct output map
-        self.decoder = ConvDecoder(embed_dim, out_channels, target_size)
+        self.decoder = ConvDecoder(embed_dim, out_channels, target_size, in_channels=in_channels)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_low = x  # [B, C, H, W]
