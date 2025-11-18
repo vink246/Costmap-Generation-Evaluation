@@ -25,6 +25,7 @@ costmap:
   - 64
   obstacle_threshold_m: 0.2
   dilation_radius_cells: 2
+  max_depth_m: 30.0
   max_depth_m_nyu: 10.0
   max_depth_m_kitti: 80.0
 kitti:
