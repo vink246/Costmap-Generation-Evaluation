@@ -21,7 +21,7 @@ def compute_auprc(entry):
 
 def find_pr_file(pr_dir: Path, dataset: str, split: str, model_tag: str):
     # Match JSON file by naming convention: pr_<dataset>_<split>_<model_tag>.json
-    candidates = list(pr_dir.glob(f"pr_{dataset}_{split}_*{model_tag}*.json"))
+    candidates = list(pr_dir.glob(f"pr_{dataset}_{split}_{model_tag}_{split}.json"))
     if not candidates:
         raise FileNotFoundError(f"No PR file found for dataset={dataset}, split={split}, model={model_tag}")
     return candidates[0]
@@ -56,7 +56,7 @@ def main():
 
     print("AUPRCs:")
     for ds in datasets:
-        print(f"  {ds.upper()}: {auprc[ds]:.5f}")
+        print(f"  {ds.upper()}: {auprc[ds]}")
 
     # Create plots
     plot_dir = args.pr_dir / args.model_tag

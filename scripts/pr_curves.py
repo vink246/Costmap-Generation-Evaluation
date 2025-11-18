@@ -69,6 +69,7 @@ def main():
     precs = []; recs = []; f1s = []
     for thr in thresholds:
         ps = rs = fs = 0.0
+        stems = sorted([p.stem for p in Path(args.pred_dir).glob("*.npy")])
         for stem in stems:
             lab = load_label(args.processed_root, args.dataset, args.split, stem)
             pred = load_pred(args.pred_dir, stem)

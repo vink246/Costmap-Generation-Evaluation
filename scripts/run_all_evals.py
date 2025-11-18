@@ -74,7 +74,7 @@ def main():
     cmds: list[list[str]] = []
 
     # PR curves per prediction dir
-    if not args.skip-pr:
+    if not args.skip_pr:
         for pd in pred_dirs:
             cmds.append([
                 sys.executable, "scripts/pr_curves.py",
@@ -84,7 +84,7 @@ def main():
             ])
 
     # Planner eval: labels (source=labels, pred-dir omitted)
-    if not args.skip-planner:
+    if not args.skip_planner:
         for thr in args.thresholds:
             cmds.append([
                 sys.executable, "scripts/planner_eval.py",
