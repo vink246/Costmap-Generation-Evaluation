@@ -18,10 +18,12 @@ def main():
     ap.add_argument('--in_channels', type=int, default=4)
     ap.add_argument('--out_channels', type=int, default=1)
     ap.add_argument('--base_channels', type=int, default=32)
+    ap.add_argument('--channels', choices=['rgb','rgbd'], default='rgbd')
+
     args = ap.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    ds = CostmapPairsNPZ(args.data_root, split='val', dataset=args.dataset)
+    ds = CostmapPairsNPZ(args.data_root, split='val', dataset=args.dataset, channels=args.channels)
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
     ModelClass = getattr(importlib.import_module(args.model_module), args.model_class)
