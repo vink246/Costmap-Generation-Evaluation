@@ -1,4 +1,9 @@
 {
+  "meta": {
+    "created_at": "2025-11-25T18:33:44.329284Z",
+    "git_commit": "e17be4c",
+    "source": "baseline_depth_heuristic"
+  },
   "aggregate": {
     "dataset": "nyu",
     "split": "val",
