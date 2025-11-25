@@ -248,9 +248,11 @@ def evaluate_baseline_with_perturbations(processed_root, dataset, split, perturb
                 pred = ndimage.zoom(pred, (label_perturbed.shape[0]/pred.shape[0], label_perturbed.shape[1]/pred.shape[1]), order=1)
             
             pred_t = np.clip(pred, 0, 1)
-            m_mae = mae(pred_t, label_perturbed)
-            m_iou = iou_binary(pred_t, label_perturbed)
-            p, r, f1 = precision_recall_f1(pred_t, label_perturbed)
+            pred_tensor = torch.from_numpy(pred_t).float()
+            label_tensor = torch.from_numpy(label_perturbed).float()
+            m_mae = mae(pred_tensor, label_tensor)
+            m_iou = iou_binary(pred_tensor, label_tensor)
+            p, r, f1 = precision_recall_f1(pred_tensor, label_tensor)
             
             records.append({
                 'stem': stem,
@@ -303,9 +305,11 @@ def evaluate_classical_baseline(args):
         if pred.shape != label.shape:
             pred = ndimage.zoom(pred, (label.shape[0]/pred.shape[0], label.shape[1]/pred.shape[1]), order=1)
         pred_t = np.clip(pred, 0, 1)
-        m_mae = mae(pred_t, label)
-        m_iou = iou_binary(pred_t, label)
-        p, r, f1 = precision_recall_f1(pred_t, label)
+        pred_tensor = torch.from_numpy(pred_t).float()
+        label_tensor = torch.from_numpy(label).float()
+        m_mae = mae(pred_tensor, label_tensor)
+        m_iou = iou_binary(pred_tensor, label_tensor)
+        p, r, f1 = precision_recall_f1(pred_tensor, label_tensor)
         clean_records.append({
             'mae': m_mae,
             'iou': m_iou,
