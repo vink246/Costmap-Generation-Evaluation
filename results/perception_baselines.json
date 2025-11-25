@@ -5,6 +5,16 @@
   "datasets": {
     "nyu": [
       {
+        "method": "Classical Baseline",
+        "variant": "heuristic",
+        "mae": 0.4727423441319065,
+        "iou": 0.3093899437991713,
+        "precision": 0.3391403641288766,
+        "recall": 0.7616667225861457,
+        "f1": 0.4685671685479469,
+        "params_m": null
+      },
+      {
         "method": "UNet",
         "variant": "baseline",
         "mae": 0.0139,
@@ -15,27 +25,47 @@
         "params_m": 4.2
       },
       {
+        "method": "UNet",
+        "variant": "rgb_only",
+        "mae": 0.0126,
+        "iou": 0.9209,
+        "precision": 0.9481,
+        "recall": 0.9699,
+        "f1": 0.9588,
+        "params_m": 4.2
+      },
+      {
         "method": "ViT",
         "variant": "baseline",
         "mae": 0.0063,
-        "iou": 0.9750,
-        "precision": 0.9880,
-        "recall": 0.9860,
-        "f1": 0.9870,
+        "iou": 0.975,
+        "precision": 0.988,
+        "recall": 0.986,
+        "f1": 0.987,
         "params_m": 10.8
       },
       {
         "method": "Hybrid",
         "variant": "baseline",
         "mae": 0.0088,
-        "iou": 0.9680,
-        "precision": 0.9830,
-        "recall": 0.9840,
-        "f1": 0.9840,
+        "iou": 0.968,
+        "precision": 0.983,
+        "recall": 0.984,
+        "f1": 0.984,
         "params_m": null
       }
     ],
     "kitti": [
+      {
+        "method": "Classical Baseline",
+        "variant": "heuristic",
+        "mae": 0.4841152688372218,
+        "iou": 0.4986535615122075,
+        "precision": 0.4986535615122075,
+        "recall": 0.9999999994825777,
+        "f1": 0.6567664460115596,
+        "params_m": null
+      },
       {
         "method": "UNet",
         "variant": "kitti_only",
@@ -57,23 +87,33 @@
         "params_m": 4.2
       },
       {
+        "method": "UNet",
+        "variant": "kitti_only_rgb",
+        "mae": 0.2702,
+        "iou": 0.4862,
+        "precision": 0.5778,
+        "recall": 0.7811,
+        "f1": 0.6501,
+        "params_m": 4.2
+      },
+      {
         "method": "ViT",
         "variant": "baseline",
-        "mae": 0.1890,
-        "iou": 0.4940,
-        "precision": 0.5990,
-        "recall": 0.7230,
-        "f1": 0.6500,
+        "mae": 0.189,
+        "iou": 0.494,
+        "precision": 0.599,
+        "recall": 0.723,
+        "f1": 0.65,
         "params_m": 10.8
       },
       {
         "method": "Hybrid",
         "variant": "baseline",
-        "mae": 0.1740,
-        "iou": 0.5270,
-        "precision": 0.7090,
-        "recall": 0.5850,
-        "f1": 0.6360,
+        "mae": 0.174,
+        "iou": 0.527,
+        "precision": 0.709,
+        "recall": 0.585,
+        "f1": 0.636,
         "params_m": null
       }
     ]

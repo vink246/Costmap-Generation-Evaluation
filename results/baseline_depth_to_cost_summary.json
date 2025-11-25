@@ -3,19 +3,19 @@
     {
       "dataset": "nyu",
       "split": "val",
-      "near_thresh": 0.5,
+      "near_thresh": 3.0,
       "dilation_radius": 2,
       "num_samples": 131,
-      "mae": 0.0028430060483515263,
-      "iou": 0.9868749993832032,
-      "precision": 0.9868749993832032,
-      "recall": 0.9999999993666879,
-      "f1": 0.9933936485005893
+      "mae": 0.4727423441319065,
+      "iou": 0.3093899437991713,
+      "precision": 0.3391403641288766,
+      "recall": 0.7616667225861457,
+      "f1": 0.4685671685479469
     },
     {
       "dataset": "kitti",
       "split": "val",
-      "near_thresh": 0.5,
+      "near_thresh": 3.0,
       "dilation_radius": 2,
       "num_samples": 433,
       "mae": 0.4841152688372218,
@@ -26,15 +26,16 @@
     }
   ],
   "args": {
-    "processed_root": "data\\processed",
+    "processed_root": "data/processed",
     "datasets": [
       "nyu",
       "kitti"
     ],
     "split": "val",
-    "near_thresh": 0.5,
+    "near_thresh": 3.0,
     "dilation_radius": 2,
     "limit": 0,
-    "out": "results"
+    "out": "results",
+    "data_config": "configs/data.yaml"
   }
 }

@@ -1,0 +1,16 @@
+{
+  "source_dataset": "nyu",
+  "target_dataset": "kitti",
+  "split": "val",
+  "checkpoint": "runs/nyu_unet/UNet_best.pth",
+  "metrics": {
+    "mae": 0.18523816258779593,
+    "iou": 0.42825368427471383,
+    "precision": 0.6382196773144312,
+    "recall": 0.5181310453625254,
+    "f1": 0.5675671826176797
+  },
+  "num_samples": 28,
+  "git_commit": "8b31204",
+  "created_at": "2025-11-25T17:56:33.163032Z"
+}

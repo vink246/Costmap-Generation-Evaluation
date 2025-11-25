@@ -1,0 +1,16 @@
+{
+  "checkpoint": "runs/nyu_unet/UNet_best.pth",
+  "dataset": "nyu",
+  "split": "val",
+  "model_module": "src.models.unet",
+  "model_class": "UNet",
+  "in_channels": 4,
+  "base_channels": 32,
+  "num_preds": 131,
+  "first_batch_stats": {
+    "logits_mean": -0.2261575609445572,
+    "logits_std": 1.012156367301941,
+    "sigmoid_mean": 0.4512813091278076,
+    "sigmoid_std": 0.20287877321243286
+  }
+}
