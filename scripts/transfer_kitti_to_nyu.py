@@ -1,42 +1,31 @@
-"""
-Transfer Learning Script for KITTI from NYU-trained UNet
+"""Wrapper script for KITTI to NYU transfer learning.
 
-This script loads a pre-trained NYU model and fine-tunes it on KITTI data.
+This calls the bidirectional transfer_learn.py script with appropriate arguments.
 """
 
 import argparse
-import os
 import sys
-import torch
-import yaml
-import importlib
-
-# Add project root to Python path
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, project_root)
-
-from src.train.train import load_config, get_device, build_dataloaders, build_losses, compute_loss, evaluate
-
-
-def load_pretrained_model(checkpoint_path: str, model_class, model_kwargs, device):
-    """Load a pre-trained model checkpoint."""
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    model = model_class(**model_kwargs).to(device)
-    model.load_state_dict(checkpoint['model'])
-    return model, checkpoint
+import subprocess
+from pathlib import Path
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Transfer learning between datasets')
-    parser.add_argument('--source_checkpoint', required=True, help='Path to source dataset checkpoint')
-    parser.add_argument('--target_config', required=True, help='Path to target dataset training config')
-    parser.add_argument('--freeze_encoder', action='store_true', help='Freeze encoder weights')
-    parser.add_argument('--warmup_epochs', type=int, default=5, help='Epochs with frozen encoder')
+    ap = argparse.ArgumentParser(description='Transfer learning from KITTI to NYU')
+    ap.add_argument('--kitti_checkpoint', required=True, help='Path to KITTI-trained model checkpoint')
+    ap.add_argument('--nyu_config', required=True, help='Path to NYU training config')
+    ap.add_argument('--freeze_encoder', action='store_true', help='Freeze encoder weights')
+    ap.add_argument('--warmup_epochs', type=int, default=5, help='Epochs with frozen encoder')
+    args = ap.parse_args()
     
-    args = parser.parse_args()
+    # Import and call transfer_learn main with renamed arguments
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from src.train.transfer_learn import load_config, get_device, build_dataloaders, build_losses, compute_loss, evaluate
+    from src.train.transfer_learn import load_pretrained_model
+    import torch
+    import importlib
     
-    # Load target config
-    cfg = load_config(args.target_config)
+    # Load NYU config
+    cfg = load_config(args.nyu_config)
     device = get_device()
     
     # Build model
@@ -46,13 +35,13 @@ def main():
     
     ModelClass = getattr(importlib.import_module(model_module), model_class)
     
-    # Load pre-trained source model
-    print(f"Loading pre-trained model from: {args.source_checkpoint}")
-    model, source_checkpoint = load_pretrained_model(args.source_checkpoint, ModelClass, model_kwargs, device)
+    # Load pre-trained KITTI model
+    print(f"Loading pre-trained KITTI model from: {args.kitti_checkpoint}")
+    model, kitti_checkpoint = load_pretrained_model(args.kitti_checkpoint, ModelClass, model_kwargs, device)
     
     # Build dataloaders
     data_root = cfg['data_root']
-    dataset_name = cfg.get('dataset', 'kitti')
+    dataset_name = cfg.get('dataset', 'nyu')
     batch_size = cfg.get('batch_size', 8)
     num_workers = cfg.get('num_workers', 4)
     channels = 'rgb' if cfg.get('rgb_only', False) else 'rgbd'
@@ -70,7 +59,8 @@ def main():
     
     weights, l1_fn, dice_fn, bnd_fn, bce_fn = build_losses(cfg)
     
-    # Training loop with optional encoder freezing
+    # Training loop
+    import os
     best_f1 = -1
     epochs = cfg.get('epochs', 50)
     
@@ -96,7 +86,6 @@ def main():
             cm = cm.to(device)
             pred_full = model(img)
             
-            # Resize to 64x64 target
             if pred_full.shape[-2:] != cm.shape[-2:]:
                 pred = torch.nn.functional.interpolate(pred_full, size=cm.shape[-2:], mode='bilinear', align_corners=False)
             else:
@@ -107,7 +96,6 @@ def main():
             loss.backward()
             optimizer.step()
             
-            # Accumulate training losses
             train_losses['total'] += logs['total']
             train_losses['l1'] += logs.get('l1', 0)
             train_losses['dice'] += logs.get('dice', 0)
@@ -118,12 +106,10 @@ def main():
         metrics = evaluate(model, val_dl, device)
         current_lr = optimizer.param_groups[0]['lr']
         
-        # Average training losses
         avg_train_losses = {k: v/train_batches for k, v in train_losses.items()}
         print(f"Epoch {epoch}: train_losses {avg_train_losses}")
         print(f"Epoch {epoch}: val metrics {metrics}, lr: {current_lr:.6f}")
         
-        # Step scheduler
         if scheduler is not None:
             scheduler.step()
         
@@ -137,7 +123,7 @@ def main():
                 'cfg': cfg, 
                 'epoch': epoch, 
                 'metrics': metrics,
-                'transfer_from': args.source_checkpoint
+                'transfer_from': args.kitti_checkpoint
             }, os.path.join(out_dir, f'{model_class}_transfer_best.pth'))
     
     print(f"Transfer learning completed. Best F1: {best_f1:.4f}")
@@ -145,3 +131,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

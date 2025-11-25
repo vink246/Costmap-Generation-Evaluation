@@ -1,0 +1,19 @@
+out_dir: runs/nyu_unet_rgb
+data_root: data/processed
+dataset: nyu
+batch_size: 32
+epochs: 20
+num_workers: 4
+model_module: src.models.unet
+model_class: UNet
+rgb_only: true
+model_kwargs:
+  in_channels: 3
+  out_channels: 1
+  base_channels: 32
+lr: 0.0001
+loss_weights:
+  l1: 1.0
+  dice: 0.5
+  boundary: 0.1
+
