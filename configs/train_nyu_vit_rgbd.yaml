@@ -1,5 +1,5 @@
-out_dir: runs/nyu_vit_rgbd
-data_root: data/processed
+out_dir: /home/hice1/mranjan9/scratch/mranjan9/runs/nyu_vit_rgbd
+data_root: /home/hice1/mranjan9/scratch/mranjan9/data/processed
 dataset: nyu
 batch_size: 32
 epochs: 50
