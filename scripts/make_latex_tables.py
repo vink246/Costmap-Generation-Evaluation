@@ -21,10 +21,18 @@ def table_for_dataset(name: str, rows: list, threshold: float) -> str:
     body_lines = []
     for r in rows:
         params = ("--" if r.get("params_m") in (None, "",) else f"{r['params_m']}")
+        variant_suffix = ""
+        if r.get("variant") == "nyu_to_kitti_tl" and name == "kitti":
+            variant_suffix = " (NYU $\\rightarrow$ KITTI TL)"
+        elif r.get("variant") == "kitti_only" and name == "kitti":
+            variant_suffix = " (KITTI only)"
+        elif r.get("variant") == "rgb_only":
+            variant_suffix = " (RGB only)"
+        elif r.get("variant") == "heuristic" and r.get("method") == "Classical Baseline":
+            variant_suffix = ""  # No suffix for classical baseline
+        
         line = (
-            f"    {r['method']}"
-            + (" (NYU $\\rightarrow$ KITTI TL)" if r.get("variant") == "nyu_to_kitti_tl" and name == "kitti" else
-               " (KITTI only)" if r.get("variant") == "kitti_only" and name == "kitti" else "")
+            f"    {r['method']}{variant_suffix}"
             + f" & {r['mae']:.4f} & {r['iou']:.4f} & {r['precision']:.4f} & {r['recall']:.4f} & {r['f1']:.4f} & {params} \\\\"
         )
         body_lines.append(line)

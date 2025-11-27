@@ -1,0 +1,68 @@
+{
+  "threshold": 0.5,
+  "datasets": {
+    "nyu": [
+      {
+        "variant": "nyu_only",
+        "mae": 0.0139,
+        "iou": 0.9168,
+        "precision": 0.9526,
+        "recall": 0.9607,
+        "f1": 0.9566,
+        "source": "perception_baselines.json (UNet baseline)"
+      },
+      {
+        "variant": "kitti_to_nyu_tl",
+        "mae": 0.0124,
+        "iou": 0.9219,
+        "precision": 0.9544,
+        "recall": 0.9645,
+        "f1": 0.9593,
+        "source": "perception_baselines.json (UNet kitti_to_nyu_tl)"
+      },
+      {
+        "variant": "kitti_to_nyu_zs",
+        "mae": 0.14366872111956278,
+        "iou": 0.41497330959787154,
+        "precision": 0.6356761155306732,
+        "recall": 0.5487547791290666,
+        "f1": 0.5858454693254754,
+        "num_samples": 9,
+        "checkpoint": "runs/kitti_unet/UNet_best.pth",
+        "source": "results/zero_shot_kitti_to_nyu.json"
+      }
+    ],
+    "kitti": [
+      {
+        "variant": "kitti_only",
+        "mae": 0.2083,
+        "iou": 0.4803,
+        "precision": 0.6148,
+        "recall": 0.6989,
+        "f1": 0.6384,
+        "source": "perception_baselines.json (UNet kitti_only)"
+      },
+      {
+        "variant": "nyu_to_kitti_tl",
+        "mae": 0.2015,
+        "iou": 0.4999,
+        "precision": 0.6313,
+        "recall": 0.6956,
+        "f1": 0.6514,
+        "source": "perception_baselines.json (UNet nyu_to_kitti_tl)"
+      },
+      {
+        "variant": "nyu_to_kitti_zs",
+        "mae": 0.18523816258779593,
+        "iou": 0.42825368427471383,
+        "precision": 0.6382196773144312,
+        "recall": 0.5181310453625254,
+        "f1": 0.5675671826176797,
+        "num_samples": 28,
+        "checkpoint": "runs/nyu_unet/UNet_best.pth",
+        "source": "results/zero_shot_nyu_to_kitti.json"
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,17 @@
+\begin{table}[h]
+  \centering
+  \caption{UNet objective ablation. Threshold $\tau=0.5$. Compares L1-only, L1+Dice, and L1+Dice+Boundary loss configurations.}
+  \label{tab:unet_objective_ablation}
+  \begin{tabular}{lcccccc}
+    \toprule
+    Dataset & Loss Config & MAE $\downarrow$ & IoU $\uparrow$ & Precision & Recall & F1 \\ 
+    \midrule
+    NYU & L1 only & 0.0104 & 0.9237 & 0.9525 & 0.9683 & 0.9603 \\
+    NYU & L1 + Dice & 0.0261 & 0.9229 & 0.9392 & 0.9817 & 0.9599 \\
+    NYU & L1 + Dice + Boundary & 0.0204 & 0.9200 & 0.9584 & 0.9584 & 0.9583 \\
+    KITTI & L1 only & 0.1901 & 0.4135 & 0.6324 & 0.5580 & 0.5682 \\
+    KITTI & L1 + Dice & 0.2224 & 0.4411 & 0.6022 & 0.6549 & 0.6058 \\
+    KITTI & L1 + Dice + Boundary & 0.2216 & 0.4886 & 0.5921 & 0.7406 & 0.6472 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

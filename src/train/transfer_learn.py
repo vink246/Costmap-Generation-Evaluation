@@ -27,16 +27,16 @@ def load_pretrained_model(checkpoint_path: str, model_class, model_kwargs, devic
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Transfer learning from NYU to KITTI')
-    parser.add_argument('--nyu_checkpoint', required=True, help='Path to NYU-trained model checkpoint')
-    parser.add_argument('--kitti_config', required=True, help='Path to KITTI training config')
+    parser = argparse.ArgumentParser(description='Transfer learning between datasets')
+    parser.add_argument('--source_checkpoint', required=True, help='Path to source dataset checkpoint')
+    parser.add_argument('--target_config', required=True, help='Path to target dataset training config')
     parser.add_argument('--freeze_encoder', action='store_true', help='Freeze encoder weights')
     parser.add_argument('--warmup_epochs', type=int, default=5, help='Epochs with frozen encoder')
     
     args = parser.parse_args()
     
-    # Load KITTI config
-    cfg = load_config(args.kitti_config)
+    # Load target config
+    cfg = load_config(args.target_config)
     device = get_device()
     
     # Build model
@@ -46,17 +46,18 @@ def main():
     
     ModelClass = getattr(importlib.import_module(model_module), model_class)
     
-    # Load pre-trained NYU model
-    print(f"Loading pre-trained NYU model from: {args.nyu_checkpoint}")
-    model, nyu_checkpoint = load_pretrained_model(args.nyu_checkpoint, ModelClass, model_kwargs, device)
+    # Load pre-trained source model
+    print(f"Loading pre-trained model from: {args.source_checkpoint}")
+    model, source_checkpoint = load_pretrained_model(args.source_checkpoint, ModelClass, model_kwargs, device)
     
     # Build dataloaders
     data_root = cfg['data_root']
     dataset_name = cfg.get('dataset', 'kitti')
     batch_size = cfg.get('batch_size', 8)
     num_workers = cfg.get('num_workers', 4)
+    channels = 'rgb' if cfg.get('rgb_only', False) else 'rgbd'
     
-    train_dl, val_dl = build_dataloaders(data_root, dataset_name, batch_size, num_workers)
+    train_dl, val_dl = build_dataloaders(data_root, dataset_name, batch_size, num_workers, channels)
     
     # Setup optimizer and scheduler
     lr = cfg.get('lr', 5e-5)
@@ -67,7 +68,7 @@ def main():
         epochs = cfg.get('epochs', 50)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     
-    weights, l1_fn, dice_fn, bnd_fn = build_losses(cfg)
+    weights, l1_fn, dice_fn, bnd_fn, bce_fn = build_losses(cfg)
     
     # Training loop with optional encoder freezing
     best_f1 = -1
@@ -101,7 +102,7 @@ def main():
             else:
                 pred = pred_full
             
-            loss, logs = compute_loss(pred, cm, weights, l1_fn, dice_fn, bnd_fn)
+            loss, logs = compute_loss(pred, cm, weights, l1_fn, dice_fn, bnd_fn, bce_fn)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -136,7 +137,7 @@ def main():
                 'cfg': cfg, 
                 'epoch': epoch, 
                 'metrics': metrics,
-                'transfer_from': args.nyu_checkpoint
+                'transfer_from': args.source_checkpoint
             }, os.path.join(out_dir, f'{model_class}_transfer_best.pth'))
     
     print(f"Transfer learning completed. Best F1: {best_f1:.4f}")
