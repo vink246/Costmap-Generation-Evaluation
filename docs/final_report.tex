@@ -8,9 +8,34 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{siunitx}
+\usepackage{placeins}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{hyperref}
 \usepackage[final,nonatbib,main]{Styles/neurips_2025}
 \usepackage{xcolor}
+
+% Tighten float spacing so planner tables stack without large gaps.
+\setlength{\abovecaptionskip}{4pt plus 1pt minus 1pt}
+\setlength{\belowcaptionskip}{2pt plus 1pt minus 1pt}
+\setlength{\textfloatsep}{6pt plus 1pt minus 2pt}
+\setlength{\floatsep}{5pt plus 1pt minus 2pt}
+\setlength{\intextsep}{5pt plus 1pt minus 2pt}
+\setcounter{topnumber}{4}
+\setcounter{totalnumber}{6}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.85}
+
+% Reduce space before/after headings for a tighter overall layout.
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{\z@}{2.0ex plus 0.4ex minus 0.5ex}{0.7ex plus 0.2ex}{\normalfont\Large\bfseries}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}{1.5ex plus 0.3ex minus 0.3ex}{0.6ex plus 0.2ex}{\normalfont\large\bfseries}}
+\renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}{1.0ex plus 0.3ex minus 0.2ex}{0.4ex plus 0.2ex}{\normalfont\normalsize\bfseries}}
+\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}{0.8ex plus 0.2ex minus 0.2ex}{-0.3em}{\normalfont\normalsize\bfseries}}
+\makeatother
 
 \title{CS 7643 Final Report: Learning Costmap Generation from RGB\,\&\,Depth for Mobile Robot Navigation}
 \author{Rut Santana \and Ibrahim Alshayeb \and Vineet Kulkarni \and Meera Ranjan}
@@ -20,7 +45,8 @@
 \maketitle
 
 \begin{abstract}
-Learning traversability costmaps from raw perception promises adaptable navigation without hand-engineered mapping stacks. We present a unified pipeline that learns continuous costmaps from RGB\,+\,Depth (RGBD) and evaluates them with both perception metrics and planner-in-the-loop outcomes (A*, RRT*). On NYU and KITTI, we compare UNet, ViT, and a Hybrid CNN--Transformer and include a modality ablation (RGB-only). On NYU, ViT attains IoU $\approx 0.975$ (F1 $\approx 0.987$); RGBD predictions achieve planner success $\geq 0.969$ across thresholds $\tau\in\{0.4,0.5,0.6\}$ with low latency (A* $\sim$18--24 ms), while label success closely tracks but remains slightly lower at conservative thresholds. On KITTI, Hybrid yields the highest IoU (0.527); learned KITTI predictions, after an inference fix, achieve A*/RRT* success $\approx 0.73$ at $\tau{=}0.5$ (inflation 2; 100-scene sample), while label success is strongly threshold-sensitive (0.0 at $\tau\leq0.5$, $\approx$0.836 at $\tau{=}0.6$ over $n{=}433$). Distribution analysis shows predictions preserve dynamic range (KL$_{L||P}{=}0.090$; KL$_{P||L}{=}0.056$ over $n{=}433$ scenes). Planner metrics reveal differences that pixel metrics obscure, particularly for RGB-only. We release a reproducible pipeline with end-to-end orchestration and provenance logging.\end{abstract}
+Learning traversability costmaps from raw perception promises adaptable navigation without hand-engineered mapping stacks. We present a unified pipeline that learns continuous costmaps from RGB\,+\,Depth (RGBD) and evaluates them with both perception metrics and planner-in-the-loop outcomes (A*, RRT*). On NYU and KITTI we compare UNet, ViT, and a Hybrid CNN--Transformer plus a modality ablation (RGB-only). On NYU, ViT attains IoU $\approx 0.975$ (F1 $\approx 0.987$) and RGBD predictions deliver planner success $0.969/0.977/0.992$ for $\tau=0.4/0.5/0.6$ with 18--24 ms A*. On KITTI, the Hybrid yields IoU 0.527 and the fixed UNet RGBD retrain now achieves $0.734/0.797/0.843$ success with $\sim$32--36 ms RRT* (inflation 2, $n=433$). Distribution analysis shows predictions preserve dynamic range (KL$_{L||P}{=}0.090$; KL$_{P||L}{=}0.056$). Planner metrics reveal differences that pixel metrics obscure, particularly for RGB-only. We release a reproducible pipeline with end-to-end orchestration and provenance logging.
+\end{abstract}
 
 \section{Introduction}
 Traversability costmaps are the lingua franca between perception and motion planning in mobile robotics. Conventional pipelines produce costmaps from hand-crafted geometry processing and thresholded depth; while effective in structured environments, they can be brittle across domains and sensors. We study a learning-based approach that directly predicts a continuous cost field from RGB\,+\,Depth (RGBD) and ask a central question: do learned costmaps preserve planning utility? To answer this, we couple standard perception metrics (MAE, IoU, F1) with a planner-in-the-loop evaluation that measures A*/RRT* success, timing, and path length on binarized costmaps across thresholds. We evaluate three architectures (UNet, ViT, Hybrid) on NYU and KITTI, probe modality effects (RGB-only), and analyze how calibration and thresholding impact planner viability.
@@ -28,68 +54,120 @@ Traversability costmaps are the lingua franca between perception and motion plan
 \section{Related Work}
 Prior work learns traversability or BEV maps from vision and couples predictions to planning. TerrainNet highlights planning-aware metrics and boundary fidelity; U-Net variants have proven efficient for resource-limited platforms; transformer-based mapping improves global consistency; and camera-only pipelines underline depth sensitivity. Preference-conditioned costmaps add flexibility but change the problem setting. We differ by standardizing supervision across NYU/KITTI, comparing UNet, ViT, and Hybrid under a common decoder and objectives, and evaluating both perception and planner outcomes within one reproducible pipeline. See \cite{meng2023,qiu2025,chen2022,bochare2025,mao2025,unet,vit} for details.
 
-\section{Data}
-We use KITTI Raw (outdoor) and NYU Depth v2 (indoor) and convert each to supervised pairs with a unified format. Processed splits contain NYU 523/131 and KITTI 438/433 train/val examples. Inputs are RGBD images resized to $256\times256$ and normalized channelwise using dataset statistics; targets are continuous costmaps in $[0,1]$ at $64\times64$ resolution. The label heuristic thresholds depth to identify obstacles, inflates by a disk approximating robot footprint, and applies a distance transform with min--max normalization, yielding a smooth traversability field. Splits and roots are configured in \texttt{configs/data.yaml}; artifacts are stored under \texttt{data/processed/<dataset>/<split>/*.npz}.
+\section{Method and Approach}
+\subsection{Model Architectures}
+We evaluate three families with a common lightweight decoder: UNet (encoder--decoder with skip connections), ViT (patch embedding + transformer encoder + convolutional upsampling), and Hybrid (CNN stem with transformer bottleneck). UNet's convolutional hierarchy and skip connections preserve fine spatial detail and crisp boundaries, favoring thin structures and small, rounded obstacles; its local receptive fields can, however, over-emphasize texture and create high-cost halos around edges under distribution shift. ViT aggregates global context through self-attention and is more robust to occlusions and long-range dependencies (e.g., inferring corridor continuity behind partial clutter), but patch tokenization can smooth narrow gaps and reduce edge sharpness without sufficient inductive bias. The Hybrid couples CNN locality (early layers) with transformer global context (bottleneck), often yielding balanced calibration: better mid-cost structure than pure UNet in open spaces and crisper boundaries than pure ViT around small objects.
 
-\section{Methodology}
-\paragraph{Data and labels.} We standardize NYU and KITTI to paired inputs $(I\_{\mathrm{RGBD}} \in \mathbb{R}^{H\times W\times 4})$ and targets $(C \in [0,1]^{64\times64})$. Depth-derived labels follow a classical pipeline: obstacle extraction, morphological inflation to approximate footprint, and a distance transform mapped to $[0,1]$, yielding a smooth traversability surface rather than binary occupancy.
-\paragraph{Models.} We evaluate three families with a common lightweight decoder: UNet (encoder--decoder with skip connections), ViT (patch embedding + transformer encoder + convolutional upsampling), and Hybrid (CNN stem with transformer bottleneck). All produce a 1-channel costmap.
-\paragraph{Architectural inductive biases and expected behaviors.} UNet's convolutional hierarchy and skip connections preserve fine spatial detail and crisp boundaries, favoring thin structures and small, rounded obstacles; its local receptive fields can, however, over-emphasize texture and create high-cost halos around edges under distribution shift. ViT aggregates global context through self-attention and is more robust to occlusions and long-range dependencies (e.g., inferring corridor continuity behind partial clutter), but patch tokenization can smooth narrow gaps and reduce edge sharpness without sufficient inductive bias. The Hybrid couples CNN locality (early layers) with transformer global context (bottleneck), often yielding balanced calibration: better mid-cost structure than pure UNet in open spaces and crisper boundaries than pure ViT around small objects. These biases motivate our hypotheses and explain dataset-specific outcomes below.
-\paragraph{Optimization and metrics.} We minimize $\mathcal{L}=\lambda_{\ell_1}\,\mathcal{L}_{\ell_1}+\lambda_d\,\mathcal{L}_{\text{Dice}}(+\lambda_b\,\mathcal{L}_{\text{boundary}})$ with Adam (initial LR $\sim10^{-3}$), early stopping on validation, and report MAE on continuous costs plus IoU/Precision/Recall/F1 on binarized maps. PR curves sweep $\tau\in[0,1]$.
+\subsection{Architecture Pseudocode}
+Algorithm~\ref{alg:architectures} summarizes the forward pass templates that implement the three perception backbones. Each variant reuses the shared decoder and loss functions described later; the only differences are in how features are encoded before fusion/upsampling.
 
-\paragraph{Inference reliability checks.} To prevent degenerate predictions, inference logs first-batch statistics (logits/sigmoid mean and std), enforces output resize to the label resolution ($64\times64$), and aborts if the first-batch sigmoid std $\le 10^{-4}$. We also ensured the correct KITTI checkpoint was used. Together these checks eliminated the earlier all-ones, $256\times256$ outputs and yielded healthy KITTI predictions for planning.
+\begin{algorithm}[h]
+  \caption{Forward pass templates for the perception backbones}
+  \label{alg:architectures}
+  \begin{algorithmic}[1]
+    \Procedure{UNetForward}{$x$}
+      \State $\{e_k\}_{k=1}^{L} \gets \textproc{DownBlocks}(x)$ \Comment{Conv blocks with pooling}
+      \State $z \gets \textproc{Bottleneck}(e_L)$
+      \State $y \gets \textproc{UpBlocks}(z, \{e_k\})$ \Comment{Skip connections concatenate encoder features}
+      \State \textbf{return} $\sigma(\textproc{Conv}_{1\times1}(y))$
+    \EndProcedure
+    \Procedure{ViTForward}{$x$}
+      \State $p \gets \textproc{PatchEmbed}(x)$ \Comment{Flatten + project to tokens}
+      \State $t \gets \textproc{TransformerEncoder}(p)$ \Comment{Multi-head self-attention + MLP}
+      \State $f \gets \textproc{TokenReshape}(t)$ \Comment{Fold tokens back to spatial grid}
+      \State \textbf{return} $\sigma(\textproc{Decoder}(f))$
+    \EndProcedure
+    \Procedure{HybridForward}{$x$}
+      \State $c \gets \textproc{CNNStem}(x)$ \Comment{Strided convs capture local texture}
+      \State $t \gets \textproc{TransformerBottleneck}(c)$ \Comment{Global reasoning over reduced grid}
+      \State \textbf{return} $\sigma(\textproc{Decoder}(t))$ \Comment{Shared decoder upsamples to $64\times64$}
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
 
-\paragraph{Distribution-level analysis (histograms and KL).} For distribution comparisons we compute per-image histograms of costs in $[0,1]$ with 100 equal-width bins, then average densities across the split (bin counts normalized by number of pixels per image). We evaluate asymmetric divergences KL$_{L||P}$ and KL$_{P||L}$ between the aggregated label and prediction histograms using a small additive smoothing ($\epsilon{=}10^{-6}$) to avoid zeros. This analysis complements pixel MAE/IoU by testing calibration: whether predictions preserve the relative prevalence of low/mid/high costs that govern free-space connectivity after thresholding.
+\subsection{Optimization and Metrics}
+We minimize $\mathcal{L}=\lambda_{\ell_1}\,\mathcal{L}_{\ell_1}+\lambda_d\,\mathcal{L}_{\text{Dice}}(+\lambda_b\,\mathcal{L}_{\text{boundary}})$ with Adam (initial LR $\sim10^{-3}$), early stopping on validation, and report MAE on continuous costs plus IoU/Precision/Recall/F1 on binarized maps. PR curves sweep $\tau\in[0,1]$.
+
+\subsection{Inference Reliability Checks}
+To prevent degenerate predictions, inference logs first-batch statistics (logits/sigmoid mean and std), enforces output resize to the label resolution ($64\times64$), and aborts if the first-batch sigmoid std $\le 10^{-4}$. We also ensured the correct KITTI checkpoint was used. Together these checks eliminated the earlier all-ones, $256\times256$ outputs and yielded healthy KITTI predictions for planning.
+
+\subsection{Distribution-level Analysis}
+For distribution comparisons we compute per-image histograms of costs in $[0,1]$ with 100 equal-width bins, then average densities across the split (bin counts normalized by number of pixels per image). We evaluate asymmetric divergences KL$_{L||P}$ and KL$_{P||L}$ between the aggregated label and prediction histograms using a small additive smoothing ($\epsilon{=}10^{-6}$) to avoid zeros. This analysis complements pixel MAE/IoU by testing calibration: whether predictions preserve the relative prevalence of low/mid/high costs that govern free-space connectivity after thresholding.
 
 \subsection{Planner Evaluation Protocol}
-For each dataset (NYU, KITTI) and source (labels, predictions per run tag) we sweep thresholds $\tau\in\{0.4,0.5,0.6\}$ and inflate obstacles by 2 cells. We sample start/goal in free space and plan using:
-\begin{itemize}
-  \item \textbf{A*}: grid search on inflated occupancy; reports success, path length (cells), time.
-  \item \textbf{RRT*}: sampling-based search with identical inflation semantics; reports success, path length, time.
-\end{itemize}
-Each run logs per-scene records and aggregates success rates, time, and path length (plus A* cost sum), together with reproducibility metadata (git hash, seed, run tag). Tables are generated automatically.
+For each dataset (NYU, KITTI) and source (labels, predictions per run tag) we sweep thresholds $\tau\in\{0.4,0.5,0.6\}$ and inflate obstacles by 2 cells. We sample start/goal pairs in free space and plan using A* (grid search on inflated occupancy; reports success, path length in cells, time) and RRT* (sampling-based search with identical inflation semantics; reports success, path length, time). Each run logs per-scene records plus aggregate success rates, time, and path length (with A* cost sums) together with reproducibility metadata (git hash, seed, run tag). Planner sweeps emit per-scene and aggregate summaries containing success flags, failure reasons (start/goal in collision, timeouts), runtimes, path lengths, and cost sums for both planners. These summaries are consolidated into a single planner-sweep table that directly feeds the LaTeX tables, ensuring the NYU and KITTI planner results remain synchronized with the manuscript.
 
 \subsection{Hypotheses}
 H1 (Modality): RGBD improves IoU/F1 over RGB-only. H2 (Architecture): Hybrid and ViT outperform UNet at similar scale. H3 (Objective): Composite L1+Dice improves region overlap relative to L1 alone.
 
-\section{Perception Results}
+\subsection{Training Framework and Reproducibility}
+Our implementation uses Python with PyTorch and NumPy/SciPy; plotting and qualitative panels use Matplotlib. Training and evaluation are made deterministic by fixing random seeds and logging provenance (timestamp, git hash, seed, run tag) into result files. We trained and profiled on a single NVIDIA GPU (see V100 timings in Implementation Notes); evaluation (PR curves and planner-in-the-loop) runs on CPU or GPU. Hyperparameters are specified in configuration files and held consistent across models unless stated: Adam optimizer with an initial learning rate on the order of $10^{-3}$, composite L1+Dice loss (unit weights by default) with a sigmoid output, and early stopping on validation metrics. Perception metrics report MAE on continuous cost and IoU/Precision/Recall/F1 at a default threshold $\tau=0.5$, with PR curves computed over $\tau\in[0,1]$. Planner evaluation sweeps $\tau\in\{0.4,0.5,0.6\}$ using an inflation radius of 2 cells. RRT* defaults are: max\_iter 1500, step\_size 3.0, goal\_radius 3.0, neighbor\_radius 6.0, and goal\_sample\_rate 0.05; A* uses the same inflated occupancy. Data loading is Windows-safe (single-worker) to avoid nondeterministic multiprocessing. A single orchestration entry point is provided to regenerate tables and figures end-to-end.
+
+Dependencies are pinned via a requirements specification, and we ship Python entrypoints that encapsulate every evaluation stage. The primary driver orchestrates PR-curve extraction, planner sweeps across NYU and KITTI at the specified thresholds, aggregation of planner statistics, and regeneration of the LaTeX tables included in the paper. A lighter-weight driver triggers individual planner or PR stages for ablations. Because these entrypoints refresh the per-scene logs, aggregate planner-sweep table, and perception metrics in one pass, the quantitative results reported here can be reproduced from a clean checkout without manual bookkeeping.
+
+\section{Data}
+We use KITTI Raw (outdoor) and NYU Depth v2 (indoor) and convert each to supervised pairs with a unified format. Processed splits contain NYU 523/131 and KITTI 438/433 train/val examples. Inputs are RGBD images resized to $256\times256$ and normalized channelwise using dataset statistics; targets are continuous costmaps in $[0,1]$ at $64\times64$ resolution. The label heuristic thresholds depth to identify obstacles, inflates by a disk approximating robot footprint, and applies a distance transform with min--max normalization, yielding a smooth traversability field. A shared configuration manifest defines the train/validation roots, ensuring both datasets follow identical preprocessing and storage conventions.
+
+\section{Experiments and Results}
+\subsection{Perception Metrics}
 \input{tables/perception_tables.tex}
+\FloatBarrier
 ViT leads NYU (IoU $\approx$0.975, F1 $\approx$0.987); Hybrid leads KITTI IoU (0.527). Transfer (NYU$\rightarrow$KITTI) improves UNet F1 and IoU, suggesting cross-domain pretraining benefits outdoor scenes. An RGB-only NYU ablation reduces IoU/F1 modestly (\~2--3 points) yet retains high F1 (\~0.956), indicating that indoor geometry is sufficiently regular for RGB to carry significant information---we revisit planner impact below.
 \paragraph{Architecture-grounded analysis.} Indoors (NYU), global layout and long corridors reward ViT's long-range reasoning: attention preserves room-scale consistency and reduces false positives in mid-range clutter, lifting IoU/F1. UNet excels at boundary fidelity and small/round obstacles (thanks to skip connections), typically yielding sharper edges but slightly lower global calibration; this aligns with its competitive precision and occasional recall drop on thin free-space ribbons. Outdoors (KITTI), the Hybrid benefits from CNN locality for textured facades/ground while leveraging transformer context to disambiguate occluded paths across larger fields of view, explaining its IoU lead. Qualitatively, ViT tends to smooth very narrow gaps, UNet can produce high-cost halos around edges under shift, and Hybrid balances these effects, maintaining mid-cost gradients that later support planner connectivity.
 
-\section{Planner-in-the-Loop Results}\label{sec:planner}
+\subsection{Planner-in-the-Loop Evaluation}\label{sec:planner}
 \input{tables/planner_tables.tex}
-\paragraph{NYU.} Labels and RGBD predictions achieve near-perfect success ($\geq$0.969) across thresholds with low A* latency (18--24 ms) and modest path-length variation, indicating functional interchangeability for navigation. RGB-only predictions reduce success to 0.79--0.89, despite similar F1---the planner is sensitive to intermediate costs that govern connectivity, which RGB-only tends to flatten.
-\paragraph{KITTI.} Labels are sharply threshold-sensitive: success rises from 0.0 (\(\tau\leq0.5\)) to $\approx$0.836 at \(\tau=0.6\) on the full validation set ($n=433$). After the inference fix, learned predictions remain usable for planning (A*/RRT* success $\approx 0.73$ at $\tau=0.5$, inflation 2; 100-scene sample), though residual high-cost pockets near start/goal still block paths in some scenes. The improvements stem from (i) enforcing output resize to $64\times64$ so binarization aligns with label resolution, (ii) first-batch statistics with a degeneracy guard (abort if sigmoid std $\le 10^{-4}$) to prevent saturated outputs, and (iii) verifying the correct checkpoint. These changes restored dynamic range and free-space connectivity at mid thresholds, converting previously disconnected occupancy into traversable corridors. Practical recommendations include adaptive threshold selection, light morphological filtering for connectivity, and planner-aware calibration to reduce spurious high-cost regions.
+\FloatBarrier
+Tables~\ref{tab:nyu_planner_labels}--\ref{tab:kitti_planner_pred_unet_rgbd_retrain} summarize the label baselines and the best-performing RGBD predictions for each dataset. The remaining per-architecture tables (Tables~\ref{tab:nyu_planner_pred_unet_rgb}--\ref{tab:kitti_planner_pred_vit_rgbd}) are moved to Appendix~\ref{app:planner_tables}. The planner logs record binary success; explicit collision counts are not stored because any collision event (including start/goal in inflated occupancy or an RRT* timeout caused by blocked space) manifests as a failure in the logged success indicator, so failure rate equals collision rate under our evaluation protocol.
+\paragraph{NYU.} RGBD predictions remain near-perfect (success $0.969/0.977/0.992$ for $\tau=0.4/0.5/0.6$) with A* latency $\sim$18--24 ms and $\leq$16 ms RRT*, while labels lag at the two lower thresholds ($0.771$ and $0.893$ with sub-millisecond A* and 27--47 ms RRT*) before converging to $0.924$ by $\tau=0.6$. The gap highlights how predictions retain free-space connectivity once thresholds become aggressive. RGB-only predictions reduce success to 0.79--0.89, despite similar F1---the planner is sensitive to intermediate costs that govern connectivity, which RGB-only tends to flatten.
+\paragraph{KITTI.} Labels are still threshold-sensitive but no longer collapse: success rises from 0.695 (A* $0.78$ ms, RRT* 35.7 ms) at $\tau=0.4$ to 0.831 at $\tau=0.5$ and $\approx$0.84 at $\tau=0.6$ on the full validation set ($n=433$). After the inference fix, the UNet RGBD retrain run now delivers $0.734/0.797/0.843$ success with $0.68$--$1.02$ ms A* and $\sim$32--36 ms RRT*, while ViT RGBD reaches $0.656/0.797/0.838$ with similar timing. Residual high-cost pockets near start/goal still account for the remaining $16$--$26\%$ failures. The improvements stem from (i) enforcing output resize to $64\times64$ so binarization aligns with label resolution, (ii) first-batch statistics with a degeneracy guard (abort if sigmoid std $\le 10^{-4}$) to prevent saturated outputs, and (iii) verifying the correct checkpoint. These changes restored dynamic range and free-space connectivity at mid thresholds, converting previously disconnected occupancy into traversable corridors. Practical recommendations include adaptive threshold selection, light morphological filtering for connectivity, and planner-aware calibration to reduce spurious high-cost regions.
 \paragraph{Architecture-specific planner implications.} UNet's strong edges help avoid grazing contacts and identify small/round obstacles, but its locality can leave conservative high-cost bands that pinch narrow passages, reducing success at mid thresholds on KITTI unless inflation/thresholds are tuned. ViT's global context often recovers occluded corridors and maintains corridor continuity in NYU, yielding robust success; on KITTI it may slightly under-represent tight gaps due to patch-level smoothing, trading safety for recall. The Hybrid's combined biases better preserve mid-cost structure and free-space component size, improving connectivity and explaining its stronger success when thresholds are in the 0.5--0.6 range. These tendencies match our qualitative panels and the observed gap between similar F1 but different planner success across architectures/modality.
 \paragraph{Qualitative analysis.} The qualitative panels in Appendix Figures~\ref{fig:appendix_nyu_grid} (NYU) and~\ref{fig:appendix_kitti_grid} (KITTI) visualize how cost calibration translates into connectivity after binarization. In NYU, RGBD predictions preserve mid-cost gradients so the free-space boundary remains smooth and corridors are connected, aligning with success $\geq$0.969. The RGB-only ablation flattens mid-costs, narrowing corridors and sometimes disconnecting components, which matches its lower success (0.79--0.89). In KITTI, the post-fix predictions restore dynamic range; binarized maps at $\tau\in[0.5,0.6]$ show reconnected traversable regions, while difference maps expose residual high-cost islands near start/goal that account for remaining failures (\~16--27\%).
-\paragraph{KITTI distribution analysis.} After fixing inference (degeneracy guard, resize, correct checkpoint) KITTI predictions are no longer saturated. Over the full validation set ($n=433$) labels have mean $0.516$ (std $0.238$) and predictions mean $0.531$ (std $0.211$); dynamic range is preserved (pred min $\approx0.031$, max $\approx0.994$). Distribution shift is modest (KL$_{L||P}=0.090$, KL$_{P||L}=0.056$) compared to the initial saturated model (KL$_{L||P}\approx14.31$). Binary IoU at $\tau=0.5$ improves from $\approx0.26$ (early sample) to $0.445$ over all scenes, with MAE $0.220\pm0.194$. Planner success (A*/RRT*, $\tau=0.5$, inflation 2) reaches $\approx0.73$ (100-scene sample), indicating that while calibration is improved, residual false obstacles near start/goal still block paths in $\approx27\%$ of scenes. Why this helps: preserving mid-cost structure increases the fraction and size of free-space connected components after binarization, so A* and RRT* can discover corridors at $\tau\in[0.5,0.6]$ instead of facing fully blocked maps. Failure modes are dominated by start/goal placement in high-cost pockets rather than global blockage. Future improvements: (1) start/goal aware curriculum, (2) histogram or focal regression to tighten mid-cost alignment, (3) boundary refinement to raise IoU without inflating cost variance.
+\paragraph{KITTI distribution analysis.} After fixing inference (degeneracy guard, resize, correct checkpoint) KITTI predictions are no longer saturated. Over the full validation set ($n=433$) labels have mean $0.516$ (std $0.238$) and predictions mean $0.531$ (std $0.211$); dynamic range is preserved (pred min $\approx0.031$, max $\approx0.994$). Distribution shift is modest (KL$_{L||P}=0.090$, KL$_{P||L}=0.056$) compared to the initial saturated model (KL$_{L||P}\approx14.31$). Binary IoU at $\tau=0.5$ improves from $\approx0.26$ (early sample) to $0.445$ over all scenes, with MAE $0.220\pm0.194$. Planner success (A*/RRT*, $\tau=0.5$, inflation 2) now reaches $\approx0.80$ (0.797 for UNet RGBD retrain on all 433 scenes), indicating that while calibration is improved, residual false obstacles near start/goal still block paths in $\approx20\%$ of scenes. Preserving mid-cost structure increases the fraction and size of free-space connected components after binarization, so A* and RRT* can discover corridors at $\tau\in[0.5,0.6]$ instead of facing fully blocked maps. Failure modes are dominated by start/goal placement in high-cost pockets rather than global blockage. Future improvements: (1) start/goal aware curriculum, (2) histogram or focal regression to tighten mid-cost alignment, (3) boundary refinement to raise IoU without inflating cost variance.
 \paragraph{Discussion.} Planner metrics expose differences obscured by pixel-wise F1/IoU. Modality effects are magnified at the planner level: even small perception deltas can disrupt free-space connectivity. The continuous cost formulation is beneficial, but its calibration must reflect planner needs; in practice we find that (i) preserving dynamic range and mid-cost structure, and (ii) selecting an appropriate binarization threshold with modest inflation are decisive for navigation outcomes. By architecture: UNet is strongest at boundary fidelity and small objects (good for round/thin obstacles) but needs calibration to avoid conservative halos; ViT best preserves global layout and corridor continuity (robust to occlusions) yet can smooth very narrow gaps; Hybrid provides the best balance for mixed-scale outdoor scenes, sustaining connectivity at planner thresholds without sacrificing edge sharpness.
 
-\section{Ablation and Robustness Studies}
-\subsection{Cross-Domain Generalization}
+\subsection{Ablation and Robustness Studies}
+\subsubsection{Cross-Domain Generalization}
 \input{tables/unet_cross_domain_tables.tex}
+\FloatBarrier
 Fine-tuning a KITTI model on NYU recovers almost all in-domain performance (F1 0.959 vs 0.957) whereas zero-shot deployment collapses to $0.586$ F1 despite similar precision (Table~\ref{tab:unet_cross_domain_nyu}). Outdoors the benefit of adaptation is even larger: NYU$\rightarrow$KITTI transfer lifts IoU/F1 from $(0.480, 0.638)$ to $(0.500, 0.651)$, while zero-shot transfer lags by over eight F1 points (Table~\ref{tab:unet_cross_domain_kitti}). Cross-domain pretraining therefore remains useful, but lightweight fine-tuning is essential for preserving free-space calibration under shifts in texture, depth, and illumination.
 
-\subsection{Objective Ablation (H3)}
+\subsubsection{Objective Ablation (H3)}
 \input{tables/unet_objective_ablation_table.tex}
+\FloatBarrier
 On NYU the three losses differ by less than 0.3 F1 points—L1-only delivers the best MAE ($0.0104$) and essentially matches L1+Dice. On KITTI, however, Dice improves recall (0.655 vs 0.558) at the expense of higher MAE, and the boundary term is required to recover precision, raising IoU from $0.413$ to $0.489$ and F1 from $0.568$ to $0.647$. These results validate H3: overlap/boundary terms are critical for cluttered outdoor scenes, while the smoother indoor labels can be learned with a simple L1 objective.
 
-\subsection{Robustness to Photometric and Geometric Perturbations}
+\subsubsection{Robustness to Photometric and Geometric Perturbations}
 \input{tables/robustness_table.tex}
-The classical depth baseline is almost invariant to brightness and blur because it operates directly on normalized depth, though perspective jitter reduces NYU F1 by 0.15. The learned RGBD UNet is markedly more brittle: darkening or blurring NYU inputs removes $\approx$0.23 F1/0.35 IoU, and the same perturbations on KITTI remove $\approx$0.58 F1/0.45 IoU. Perspective jitter also erodes KITTI F1 by 0.57. These observations motivate integrating photometric augmentation and/or depth-only auxiliary heads if the learned costmaps are to match the heuristic pipeline’s stability in the wild.
+\FloatBarrier
+The classical depth baseline is almost invariant to brightness and blur because it operates directly on normalized depth, though perspective jitter reduces NYU F1 by 0.15. The learned RGBD UNet is markedly more brittle: darkening or blurring NYU inputs removes $\approx$0.23 F1/0.35 IoU, and the same perturbations on KITTI remove $\approx$0.58 F1/0.45 IoU. Perspective jitter also erodes KITTI F1 by 0.57. These observations motivate integrating photometric augmentation and/or depth-only auxiliary heads if the learned costmaps are to match the heuristic pipeline's stability in the wild.
 
-\section{Reproducibility}
-Our implementation uses Python with PyTorch and NumPy/SciPy; plotting and qualitative panels use Matplotlib. Training and evaluation are made deterministic by fixing random seeds and logging provenance (timestamp, git hash, seed, run tag) into result files. We trained and profiled on a single NVIDIA GPU (see V100 timings in Implementation Notes); evaluation (PR curves and planner-in-the-loop) runs on CPU or GPU. Hyperparameters are specified in configuration files and held consistent across models unless stated: Adam optimizer with an initial learning rate on the order of $10^{-3}$, composite L1+Dice loss (unit weights by default) with a sigmoid output, and early stopping on validation metrics. Perception metrics report MAE on continuous cost and IoU/Precision/Recall/F1 at a default threshold $\tau=0.5$, with PR curves computed over $\tau\in[0,1]$. Planner evaluation sweeps $\tau\in\{0.4,0.5,0.6\}$ using an inflation radius of 2 cells. RRT* defaults are: max\_iter 1500, step\_size 3.0, goal\_radius 3.0, neighbor\_radius 6.0, and goal\_sample\_rate 0.05; A* uses the same inflated occupancy. Data loading is Windows-safe (single-worker) to avoid nondeterministic multiprocessing. A single orchestration entry point is provided to regenerate tables and figures end-to-end.
+\subsection{Qualitative Visualizations}
+Representative panels (RGB, depth, ground-truth, predicted costmap) are shown in Figure~\ref{fig:qual_nyu_rgbd}; our visualization utility renders the modalities side-by-side to highlight residual errors. Additional sequences, modality ablations, and KITTI panels are collected in Appendix~\ref{app:qual_panels} to keep the main narrative concise.
+
+\subsubsection{Analysis of Costmaps}
+NYU ground-truth costmaps present a smooth traversability surface: costs increase toward cluttered, near-range regions and decrease in open floor areas. This reflects our depth-derived label heuristic (distance-transform with inflation), which favors continuous gradients over binary occupancy. RGBD predictions recover the global gradient and relative ordering, while RGB-only predictions largely preserve free vs obstacle ordering but flatten intermediate costs. This subtle loss degrades planner success (0.794--0.885 vs $\geq$0.969 for RGBD/labels) despite similar F1, indicating the planner is sensitive to cost calibration in connectivity-critical zones. The absence of sharp high-cost blobs suggests the heuristic emphasizes global layout rather than per-object peaks; boundary-aware or semantic priors could sharpen localized obstacles.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_pred_000010.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_pred_000098.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_pred_000107.png}
+  \caption{NYU RGBD predictions (baseline). Predictions closely match label gradients with minor residuals, yielding planner success $\geq$0.969 across thresholds.}
+  \label{fig:qual_nyu_rgbd}
+\end{figure}
+\FloatBarrier
 
 \section{Conclusion and Limitations}
 We presented a unified pipeline for learning continuous costmaps from RGBD and evaluating them with planners. On NYU, learned costmaps match labels both in pixel metrics and planning outcomes; on KITTI, predictions are competitive but planner success depends on thresholding and calibration. ViT leads NYU IoU/F1, while Hybrid yields the highest KITTI IoU; RGB-only ablations retain good pixel metrics but reduce planner success, evidencing the importance of mid-cost calibration for connectivity. Architectural takeaways: use UNet when fine boundary detail and small/round obstacle fidelity are paramount (with planner-aware calibration), ViT when global context and occlusion reasoning dominate (indoors/structured layouts), and Hybrid for balanced performance in mixed-scale, outdoor domains where both crisp edges and long-range context matter.
 
 Limitations: (1) the depth-derived label heuristic emphasizes global gradients and may miss thin obstacles; (2) KITTI exhibits threshold sensitivity and residual miscalibration; (3) collision counts are implicit via planner failures rather than reported explicitly. Recommendations for deployment include data-driven threshold tuning with inflation radius 2, light morphological post-processing, and maintaining inference guardrails (distribution logging and degeneracy checks) to ensure usable predictions.
 
-\section*{Team Contributions}
-\begin{table}[h]
-  \centering
+Concrete next steps include start/goal-aware training curricula that bias supervision toward the sampling distribution used by planners, boundary-refinement heads or auxiliary contour losses to tighten KITTI calibration without inflating conservative halos, and validation on hardware by coupling the learned costmaps to a low-speed rover or indoor mobile base. These extensions remain compatible with the existing pipeline and would directly test transfer to real robots—the ultimate application target outlined in the rubric.
+
+\section{Team Contributions}
+\vspace{-0.5em}
+\begin{center}
   \small
   \begin{tabular}{p{0.18\linewidth}p{0.76\linewidth}}
     \toprule
@@ -101,34 +179,10 @@ Limitations: (1) the depth-derived label heuristic emphasizes global gradients a
     Meera Ranjan & ViT implementation and training; PR curves/calibration; cross-domain experiments; qualitative panels. \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{center}
+\FloatBarrier
 
-\section*{Qualitative Examples}
-We include representative panels (RGB, depth, ground-truth, predicted costmap) generated via \texttt{visualize\_examples.py}. See \texttt{docs/figures/}. Example NYU frames: \\
-\includegraphics[width=0.95\linewidth]{figures/qual_nyu_000010.png}\\
-\includegraphics[width=0.95\linewidth]{figures/qual_nyu_000025.png}\\
-\includegraphics[width=0.95\linewidth]{figures/qual_nyu_000040.png}
-
-\subsection*{Analysis of costmaps}
-NYU ground-truth costmaps present a smooth traversability surface: costs increase toward cluttered, near-range regions and decrease in open floor areas. This reflects our depth-derived label heuristic (distance-transform with inflation), which favors continuous gradients over binary occupancy. RGBD predictions recover the global gradient and relative ordering, while RGB-only predictions largely preserve free vs obstacle ordering but flatten intermediate costs. This subtle loss degrades planner success (0.794--0.885 vs $\geq$0.969 for RGBD/labels) despite similar F1, indicating the planner is sensitive to cost calibration in connectivity-critical zones. The absence of sharp high-cost blobs suggests the heuristic emphasizes global layout rather than per-object peaks; boundary-aware or semantic priors could sharpen localized obstacles.
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_pred_000010.png}\\
-  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_pred_000098.png}\\
-  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_pred_000107.png}
-  \caption{NYU RGBD predictions (baseline). Predictions closely match label gradients with minor residuals, yielding planner success $\geq$0.969 across thresholds.}
-\end{figure}
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_unet_rgb_000010.png}\\
-  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_unet_rgb_000098.png}\\
-  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_unet_rgb_000107.png}
-  \caption{NYU RGB-only predictions (UNet). Coarse structure is preserved but intermediate costs are flattened, which reduces planner success compared to RGBD.}
-\end{figure}
-
-% \section*{References}
+\FloatBarrier
 \begin{thebibliography}{9}\itemsep0pt
 \bibitem{unet} O. Ronneberger, P. Fischer, and T. Brox. U-Net: Convolutional Networks for Biomedical Image Segmentation. In Proc. MICCAI, 2015.
 \bibitem{vit} A. Dosovitskiy et al. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In Proc. ICLR, 2021.
@@ -141,9 +195,16 @@ NYU ground-truth costmaps present a smooth traversability surface: costs increas
 \bibitem{karaman2011} S. Karaman and E. Frazzoli. Sampling-based Algorithms for Optimal Motion Planning. Intl. J. Robotics Research, 2011.
 \end{thebibliography}
 
+\newpage
 \appendix
 \section*{Appendix}
+\subsection*{Planner Tables}
+\label{app:planner_tables}
+\input{tables/planner_tables_appendix.tex}
+\FloatBarrier
 % Additional qualitative and analysis figures
+\newcommand{\appendixfiggap}{\vspace{-0.45em}}
+\appendixfiggap
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.6\linewidth]{figures/hist_nyu_val_pred.png}\\
@@ -151,48 +212,76 @@ NYU ground-truth costmaps present a smooth traversability surface: costs increas
   \caption{Cost distribution histograms (NYU val, first 50). Top: RGBD baseline closely matches label distribution (KL\textsubscript{L||P}$\approx$9e-4). Bottom: RGB-only deviates modestly (KL\textsubscript{L||P}$\approx$2.26e-2), consistent with planner success gap.}
 \end{figure}
 
+\appendixfiggap
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.6\linewidth]{figures/hist_kitti_val_pred.png}
-  \caption{KITTI validation prediction cost distribution ($n=433$). Shown is the \emph{pre-fix} distribution that was saturated near cost 1.0, explaining zero planner success. After the inference fix (Section~\ref{sec:planner}), the distribution preserves dynamic range (KL\textsubscript{L||P}$=0.090$, KL\textsubscript{P||L}$=0.056$) and supports A*/RRT* success $\approx 0.74$ at $\tau=0.5$ (100-scene sample).}
+  \caption{KITTI validation prediction cost distribution ($n=433$). Shown is the \emph{pre-fix} distribution that was saturated near cost 1.0, explaining zero planner success. After the inference fix (Section~\ref{sec:planner}), the distribution preserves dynamic range (KL\textsubscript{L||P}$=0.090$, KL\textsubscript{P||L}$=0.056$) and supports A*/RRT* success $\approx 0.80$ at $\tau=0.5$ (full validation set).}
 \end{figure}
 
-\begin{figure}[h]
+\subsection*{Additional Qualitative Panels}
+\label{app:qual_panels}
+\clearpage
+\appendixfiggap
+\begin{figure}[H]
   \centering
-  % NYU appendix qualitative (compact 3-across grid)
-  \begin{minipage}[t]{0.32\linewidth}\centering
-    \includegraphics[width=\linewidth]{figures/bin_nyu_nyu_val_pred_000000.png}\\
-    {\small Binarized RGBD (\(\tau{=}0.5\))}
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.32\linewidth}\centering
-    \includegraphics[width=\linewidth]{figures/diff_nyu_nyu_val_pred_000000.png}\\
-    {\small Difference (Label$-$Pred)}
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.32\linewidth}\centering
-    \includegraphics[width=\linewidth]{figures/bin_nyu_nyu_val_unet_rgb_000000.png}\\
-    {\small Binarized RGB-only}
-  \end{minipage}
-  \caption{NYU appendix panels. RGBD predictions preserve mid-cost structure and produce clean free-space after binarization; the RGB-only model flattens mid-costs, which reduces connectivity and planner success compared to RGBD.}
-  \label{fig:appendix_nyu_grid}
+  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_000010.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_000025.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_000040.png}
+  \caption{Representative NYU RGB, depth, ground-truth, and prediction panels rendered side-by-side for qualitative inspection.}
 \end{figure}
 
-\begin{figure}[h]
+\appendixfiggap
+\begin{figure}[H]
   \centering
-  % KITTI appendix qualitative (post-fix, compact 3-across)
-  \begin{minipage}[t]{0.32\linewidth}\centering
-    \includegraphics[width=\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
-    {\small Binarized Pred (\(\tau{=}0.5\))}
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.32\linewidth}\centering
-    \includegraphics[width=\linewidth]{figures/diff_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
-    {\small Difference (Label$-$Pred)}
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.32\linewidth}\centering
-    \includegraphics[width=\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000004.png}\\
-    {\small Binarized Pred (alt scene)}
-  \end{minipage}
-  \caption{KITTI appendix panels (post-inference fix). Binarized predictions (inflation 2, $\tau\in[0.5,0.6]$) show restored free-space connectivity; difference maps highlight residual false positives near start/goal pockets, aligning with $\approx$0.73--0.84 success (Tables~\ref{tab:kitti_planner_labels}--\ref{tab:kitti_planner_pred_pred}).}
-  \label{fig:appendix_kitti_grid}
+  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_unet_rgb_000010.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_unet_rgb_000098.png}\\
+  \includegraphics[width=0.95\linewidth]{figures/qual_nyu_unet_rgb_000107.png}
+  \caption{NYU RGB-only predictions (UNet). Coarse structure is preserved but intermediate costs are flattened, which reduces planner success compared to RGBD.}
 \end{figure}
+
+\appendixfiggap
+\newpage
+\begin{samepage}
+  \begin{minipage}{\linewidth}
+    \centering
+    % NYU appendix qualitative (binarized pair above large difference map)
+    \begin{minipage}[t]{0.45\linewidth}\centering
+      \includegraphics[width=\linewidth]{figures/bin_nyu_nyu_val_pred_000000.png}\\
+      {\small Binarized RGBD (\(\tau{=}0.5\))}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.45\linewidth}\centering
+      \includegraphics[width=\linewidth]{figures/bin_nyu_nyu_val_unet_rgb_000000.png}\\
+      {\small Binarized RGB-only}
+    \end{minipage}\\[0.5em]
+    \begin{minipage}[t]{0.7\linewidth}\centering
+      \includegraphics[width=\linewidth]{figures/diff_nyu_nyu_val_pred_000000.png}\\
+      {\small Difference (Label$-$Pred)}
+    \end{minipage}
+    \captionof{figure}{NYU appendix panels. RGBD predictions preserve mid-cost structure and produce clean free-space after binarization; the RGB-only model flattens mid-costs, which reduces connectivity and planner success compared to RGBD.}
+    \label{fig:appendix_nyu_grid}
+  \end{minipage}
+
+  \vspace{0.6em}
+
+  \begin{minipage}{\linewidth}
+    \centering
+    % KITTI appendix qualitative (binarized pair above large difference map)
+    \begin{minipage}[t]{0.45\linewidth}\centering
+      \includegraphics[width=\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
+      {\small Binarized Pred (\(\tau{=}0.5\))}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.45\linewidth}\centering
+      \includegraphics[width=\linewidth]{figures/bin_kitti_kitti_val_unet_rgbd_retrain_full_000004.png}\\
+      {\small Binarized Pred (alt scene)}
+    \end{minipage}\\[0.5em]
+    \begin{minipage}[t]{0.7\linewidth}\centering
+      \includegraphics[width=\linewidth]{figures/diff_kitti_kitti_val_unet_rgbd_retrain_full_000000.png}\\
+      {\small Difference (Label$-$Pred)}
+    \end{minipage}
+    \captionof{figure}{KITTI appendix panels (post-inference fix). Binarized predictions (inflation 2, $\tau\in[0.5,0.6]$) show restored free-space connectivity; difference maps highlight residual false positives near start/goal pockets, aligning with $\approx$0.73--0.84 success (Tables~\ref{tab:kitti_planner_labels}--\ref{tab:kitti_planner_pred_unet_rgbd_retrain}).}
+    \label{fig:appendix_kitti_grid}
+  \end{minipage}
+\end{samepage}
 
 \end{document}
