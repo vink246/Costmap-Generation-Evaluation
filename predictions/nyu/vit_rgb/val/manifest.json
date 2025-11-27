@@ -1,16 +1,16 @@
 {
-  "checkpoint": "/home/hice1/mranjan9/scratch/mranjan9/runs/nyu_vit_rgb/ViT_best.pth",
+  "checkpoint": "/home/hice1/mranjan9/scratch/mranjan9/runs/nyu_vit_rgbd/ViT_best.pth",
   "dataset": "nyu",
   "split": "val",
   "model_module": "src.models.vit",
   "model_class": "ViT",
-  "in_channels": 3,
+  "in_channels": 4,
   "base_channels": 32,
   "num_preds": 131,
   "first_batch_stats": {
-    "logits_mean": -0.20545725524425507,
-    "logits_std": 1.0299193859100342,
-    "sigmoid_mean": 0.4550204575061798,
-    "sigmoid_std": 0.20601429045200348
+    "logits_mean": -0.21146845817565918,
+    "logits_std": 1.001552939414978,
+    "sigmoid_mean": 0.4542752504348755,
+    "sigmoid_std": 0.20214423537254333
   }
 }

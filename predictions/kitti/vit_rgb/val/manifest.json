@@ -8,9 +8,9 @@
   "base_channels": 32,
   "num_preds": 433,
   "first_batch_stats": {
-    "logits_mean": -0.005166739225387573,
-    "logits_std": 0.7749245762825012,
-    "sigmoid_mean": 0.498540997505188,
-    "sigmoid_std": 0.17137201130390167
+    "logits_mean": 0.47347015142440796,
+    "logits_std": 1.3135343790054321,
+    "sigmoid_mean": 0.5846381187438965,
+    "sigmoid_std": 0.20416711270809174
   }
 }
