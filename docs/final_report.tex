@@ -103,7 +103,7 @@ H1 (Modality): RGBD improves IoU/F1 over RGB-only. H2 (Architecture): Hybrid and
 \subsection{Training Framework and Reproducibility}
 Our implementation uses Python with PyTorch and NumPy/SciPy; plotting and qualitative panels use Matplotlib. Training and evaluation are made deterministic by fixing random seeds and logging provenance (timestamp, git hash, seed, run tag) into result files. We trained and profiled on a single NVIDIA GPU (see V100 timings in Implementation Notes); evaluation (PR curves and planner-in-the-loop) runs on CPU or GPU. Hyperparameters are specified in configuration files and held consistent across models unless stated: Adam optimizer with an initial learning rate on the order of $10^{-3}$, composite L1+Dice loss (unit weights by default) with a sigmoid output, and early stopping on validation metrics. Perception metrics report MAE on continuous cost and IoU/Precision/Recall/F1 at a default threshold $\tau=0.5$, with PR curves computed over $\tau\in[0,1]$. Planner evaluation sweeps $\tau\in\{0.4,0.5,0.6\}$ using an inflation radius of 2 cells. RRT* defaults are: max\_iter 1500, step\_size 3.0, goal\_radius 3.0, neighbor\_radius 6.0, and goal\_sample\_rate 0.05; A* uses the same inflated occupancy. Data loading is Windows-safe (single-worker) to avoid nondeterministic multiprocessing, and a single orchestration entry point regenerates tables and figures end-to-end.
 
-Dependencies are pinned via a requirements specification, and we ship Python entrypoints that encapsulate every evaluation stage. The primary driver orchestrates PR-curve extraction, planner sweeps across NYU and KITTI at the specified thresholds, aggregation of planner statistics, and regeneration of the LaTeX tables included in the paper. A lighter-weight driver triggers individual planner or PR stages for ablations. Because these entrypoints refresh the per-scene logs, aggregate planner-sweep table, and perception metrics in one pass, the quantitative results reported here can be reproduced from a clean checkout without manual bookkeeping.
+Dependencies are pinned via a requirements specification, and we ship Python entrypoints that encapsulate every evaluation stage. The primary driver orchestrates PR-curve extraction, planner sweeps across NYU and KITTI at the specified thresholds, and aggregation of planner statistics. A lighter-weight driver triggers individual planner or PR stages for ablations. Because these entrypoints refresh the per-scene logs, aggregate planner-sweep table, and perception metrics in one pass, the quantitative results reported here can be reproduced from a clean checkout without manual bookkeeping.
 
 \section{Data}
 We use KITTI Raw (outdoor) and NYU Depth v2 (indoor) and convert each to supervised pairs with a unified format. Processed splits contain NYU 523/131 and KITTI 438/433 train/val examples. Inputs are RGBD images resized to $256\times256$ and normalized channelwise using dataset statistics; targets are continuous costmaps in $[0,1]$ at $64\times64$ resolution. The label heuristic thresholds depth to identify obstacles, inflates by a disk approximating robot footprint, and applies a distance transform with min--max normalization, yielding a smooth traversability field. A shared configuration manifest defines the train/validation roots, ensuring both datasets follow identical preprocessing and storage conventions.
@@ -124,6 +124,21 @@ Tables~\ref{tab:nyu_planner_labels}--\ref{tab:kitti_planner_pred_unet_rgbd_retra
 \paragraph{Architecture-specific planner implications.} UNet's strong edges help avoid grazing contacts and identify small/round obstacles, but its locality can leave conservative high-cost bands that pinch narrow passages, reducing success at mid thresholds on KITTI unless inflation/thresholds are tuned. ViT's global context often recovers occluded corridors and maintains corridor continuity in NYU, yielding robust success; on KITTI it may slightly under-represent tight gaps due to patch-level smoothing, trading safety for recall. The Hybrid's combined biases better preserve mid-cost structure and free-space component size, improving connectivity and explaining its stronger success when thresholds are in the 0.5--0.6 range. These tendencies match our qualitative panels and the observed gap between similar F1 but different planner success across architectures/modality.
 \paragraph{Qualitative analysis.} The qualitative panels in Appendix Figures~\ref{fig:appendix_nyu_grid} (NYU) and~\ref{fig:appendix_kitti_grid} (KITTI) visualize how cost calibration translates into connectivity after binarization. In NYU, RGBD predictions preserve mid-cost gradients so the free-space boundary remains smooth and corridors are connected, aligning with success $\geq$0.969. The RGB-only ablation flattens mid-costs, narrowing corridors and sometimes disconnecting components, which matches its lower success (0.79--0.89). In KITTI, the post-fix predictions restore dynamic range; binarized maps at $\tau\in[0.5,0.6]$ show reconnected traversable regions, while difference maps expose residual high-cost islands near start/goal that account for remaining failures (\~16--27\%).
 \paragraph{KITTI distribution analysis.} After fixing inference (degeneracy guard, resize, correct checkpoint) KITTI predictions are no longer saturated. Over the full validation set ($n=433$) labels have mean $0.516$ (std $0.238$) and predictions mean $0.531$ (std $0.211$); dynamic range is preserved (pred min $\approx0.031$, max $\approx0.994$). Distribution shift is modest (KL$_{L||P}=0.090$, KL$_{P||L}=0.056$) compared to the initial saturated model (KL$_{L||P}\approx14.31$). Binary IoU at $\tau=0.5$ improves from $\approx0.26$ (early sample) to $0.445$ over all scenes, with MAE $0.220\pm0.194$. Planner success (A*/RRT*, $\tau=0.5$, inflation 2) now reaches $\approx0.80$ (0.797 for UNet RGBD retrain on all 433 scenes), indicating that while calibration is improved, residual false obstacles near start/goal still block paths in $\approx20\%$ of scenes. Preserving mid-cost structure increases the fraction and size of free-space connected components after binarization, so A* and RRT* can discover corridors at $\tau\in[0.5,0.6]$ instead of facing fully blocked maps. Failure modes are dominated by start/goal placement in high-cost pockets rather than global blockage. Future improvements: (1) start/goal aware curriculum, (2) histogram or focal regression to tighten mid-cost alignment, (3) boundary refinement to raise IoU without inflating cost variance.
+\paragraph{Planner path overlays.} Figure~\ref{fig:planner_kitti_overlay} visualizes how the calibrated KITTI UNet RGBD retrain costmap drives both planners: the left panel overlays label vs. prediction A* paths for a shared start/goal pair (showing near-identical trajectories), while the right panel illustrates the corresponding RRT* tree exploration on the predicted costmap. Qualitatively, the remaining failures stem from thin high-cost bands that deflect the RRT* tree near the start. To highlight these breakdowns, Figure~\ref{fig:planner_kitti_failure} fixes the same model and dataset but samples start/goal pairs where the label map succeeds while the prediction marks the start cell as occupied. The predicted A* planner immediately fails (and the RRT* tree dissipates near the start), making the false obstacle obvious. Additional success and failure overlays for NYU (UNet/ViT) and KITTI ViT appear in Appendix~\ref{app:planner_overlays}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/planner_kitti_unet_rgbd_retrain_full_000333.png}
+  \caption{Planner overlays for KITTI scene 000333 using the UNet RGBD retrain model. Left: ground-truth (yellow) vs. predicted (magenta) A* paths share the same start/goal (green/pink markers) and remain aligned after binarization. Right: RRT* exploration on the predicted costmap shows the tree expanding through free space until it converges to the same goal, highlighting residual false obstacles near the start.}
+  \label{fig:planner_kitti_overlay}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/planner_kitti_unet_rgbd_retrain_full_failure_000002.png}
+  \caption{Failure-case planner overlays for KITTI scene 000002 using the UNet RGBD retrain model. Label A* (yellow) finds a short path, but the predicted map marks the start cell as occupied (reason: \emph{start\_or\_goal\_in\_collision}), causing both A* and the follow-on RRT* search to terminate immediately. False positives near the robot therefore explain a large fraction of the remaining planner failures.}
+  \label{fig:planner_kitti_failure}
+\end{figure}
+\FloatBarrier
 \paragraph{Discussion.} Planner metrics expose differences obscured by pixel-wise F1/IoU. Modality effects are magnified at the planner level: even small perception deltas can disrupt free-space connectivity. The continuous cost formulation is beneficial, but its calibration must reflect planner needs; in practice we find that (i) preserving dynamic range and mid-cost structure, and (ii) selecting an appropriate binarization threshold with modest inflation are decisive for navigation outcomes. By architecture: UNet is strongest at boundary fidelity and small objects (good for round/thin obstacles) but needs calibration to avoid conservative halos; ViT best preserves global layout and corridor continuity (robust to occlusions) yet can smooth very narrow gaps; Hybrid provides the best balance for mixed-scale outdoor scenes, sustaining connectivity at planner thresholds without sacrificing edge sharpness.
 
 \subsection{Ablation and Robustness Studies}
@@ -198,6 +213,16 @@ Concrete next steps include start/goal-aware training curricula that bias superv
 \newpage
 \appendix
 \section*{Appendix}
+\subsection*{Objective Ablation Table}
+\label{app:objective_table}
+\input{tables/unet_objective_ablation_table.tex}
+\FloatBarrier
+
+\subsection*{Robustness Table}
+\label{app:robustness_table}
+\input{tables/robustness_table.tex}
+\FloatBarrier
+
 \subsection*{Planner Tables}
 \label{app:planner_tables}
 \input{tables/planner_tables_appendix.tex}
@@ -283,5 +308,52 @@ Concrete next steps include start/goal-aware training curricula that bias superv
     \label{fig:appendix_kitti_grid}
   \end{minipage}
 \end{samepage}
+
+\subsection*{Planner Path Overlays}
+\label{app:planner_overlays}
+\appendixfiggap
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/planner_nyu_unet_rgbd_000050.png}
+  \caption{NYU planner overlays for the UNet RGBD model (scene 000050). Label and prediction A* paths overlap closely, while the RRT* tree confirms that mid-cost gradients remain intact indoors.}
+\end{figure}
+
+\appendixfiggap
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/planner_nyu_vit_rgbd_000050.png}
+  \caption{NYU planner overlays for the ViT RGBD model (scene 000050). The ViT maintains the corridor structure and produces a compact RRT* tree with minimal detours, illustrating its global context advantages.}
+\end{figure}
+
+\appendixfiggap
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/planner_kitti_vit_rgbd_000333.png}
+  \caption{KITTI planner overlays for the ViT RGBD model (scene 000333). Slightly smoother A* trajectories and a wider RRT* tree highlight the remaining calibration gap relative to the UNet retrain in Figure~\ref{fig:planner_kitti_overlay}.}
+\end{figure}
+
+\appendixfiggap
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/planner_nyu_unet_rgb_failure_000000.png}
+  \caption{NYU failure-case overlay for the UNet RGB model (scene 000000). Labels provide a clean path, but the RGB-only prediction inflates the doorway and blocks A*. The RRT* tree terminates near the start, mirroring the logged planner failure.}
+  \label{fig:planner_failure_nyu_unet}
+\end{figure}
+
+\appendixfiggap
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/planner_nyu_vit_rgbd_failure_000001.png}
+  \caption{NYU failure-case overlay for the ViT RGBD model (scene 000001). The label path remains open, yet the ViT prediction raises a thin high-cost band that prevents both A* and RRT* from leaving the start, illustrating sensitivity to corridor pinch points.}
+  \label{fig:planner_failure_nyu_vit}
+\end{figure}
+
+\appendixfiggap
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/planner_kitti_vit_rgbd_failure_000003.png}
+  \caption{KITTI failure-case overlay for the ViT RGBD model (scene 000003). Label A* reaches the goal, but the predicted map introduces a high-cost island around the start so neither planner recovers, matching the per-scene failure logs.}
+  \label{fig:planner_failure_kitti_vit}
+\end{figure}
 
 \end{document}
