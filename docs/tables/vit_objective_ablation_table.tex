@@ -1,0 +1,14 @@
+\begin{table}[h]
+  \centering
+  \caption{ViT objective ablation. Threshold $\tau=0.5$. Compares L1-only, L1+Dice, and L1+Dice+Boundary loss configurations.}
+  \label{tab:vit_objective_ablation}
+  \begin{tabularx}{\linewidth}{llccccc>{\raggedright\arraybackslash}X}
+    \toprule
+    Dataset & Loss Config & MAE $\downarrow$ & IoU $\uparrow$ & Prec. & Recall & F1 & Notes \\
+    \midrule
+    KITTI & L1 & 0.1925 & 0.4877 & 0.5380 & 0.8522 & 0.6540 & High recall, loose predictions \\
+    KITTI & L1 + Dice & 0.1709 & 0.5366 & 0.6958 & 0.6249 & 0.6530 & Best IoU \& precision \\
+    KITTI & L1 + Dice + Boundary & 0.1693 & 0.5168 & 0.6617 & 0.6611 & 0.6549 & Best MAE \& F1, sharp edges \\
+    \bottomrule
+  \end{tabularx}
+\end{table}

@@ -162,7 +162,6 @@ runs/
 # Raw data (optional: comment out to track small subsets)
 data/raw/
 !data/raw/.gitkeep
-
 # Artifacts and reports
 artifacts/
 
@@ -174,3 +173,6 @@ artifacts/
 *.synctex.gz
 *.fls
 *.fdb_latexmk
+
+# Processed data archives
+data/processed.zip

@@ -51,8 +51,8 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     out_csv = out_dir / "planner_sweeps.csv"
 
-    rows = []
-    for p in in_dir.glob("summary_*.json"):
+    rows_by_key = {}
+    for p in sorted(in_dir.glob("summary_*.json"), key=lambda path: path.stat().st_mtime):
         fields = extract_tag_fields(p.name)
         try:
             obj = json.loads(p.read_text())
@@ -60,13 +60,17 @@ def main():
             continue
         agg = obj.get("aggregate", {})
         args_obj = obj.get("args", {})
+        if fields.get("source") == "labels" and args_obj.get("pred_dir"):
+            # Early runs omitted the "pred" token but still set pred_dir, so treat them as predictions.
+            fields["source"] = "pred"
+        run_tag = args_obj.get("run_tag") or None
         base = {
             **fields,
             "num_scenes": agg.get("num_scenes"),
             "elapsed_ms_total": agg.get("elapsed_ms_total"),
             # provenance columns
             "pred_dir": args_obj.get("pred_dir"),
-            "run_tag": args_obj.get("run_tag"),
+            "run_tag": run_tag,
         }
         if fields.get("planner") == "both":
             base.update({
@@ -85,9 +89,19 @@ def main():
                 "mean_path_len_cells": agg.get("mean_path_len_cells"),
                 "mean_cost_sum": agg.get("mean_cost_sum"),
             })
-        rows.append(base)
+        key = (
+            fields.get("dataset"),
+            fields.get("split"),
+            fields.get("planner"),
+            fields.get("threshold"),
+            fields.get("inflation"),
+            fields.get("source"),
+            run_tag,
+        )
+        rows_by_key[key] = base
 
     # write CSV
+    rows = list(rows_by_key.values())
     if rows:
         keys = sorted({k for r in rows for k in r.keys()})
         with open(out_csv, "w", newline="") as f:

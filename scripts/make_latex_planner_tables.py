@@ -3,8 +3,12 @@ from pathlib import Path
 
 
 def format_table(rows, dataset: str, source: str, tag_label: str = None):
-    caption_extra = f", {tag_label}" if tag_label else ""
-    label_extra = f"_{tag_label}" if tag_label else ""
+    caption_extra = ""
+    label_extra = ""
+    if tag_label:
+        safe_tag = tag_label.replace("_", "\\_")
+        caption_extra = f", \\texttt{{{safe_tag}}}"
+        label_extra = f"_{tag_label}"
     header = (
         "\\begin{table}[h]\n"
         "  \\centering\n"
@@ -54,9 +58,9 @@ def main():
         tex.append(format_table(nyu_sorted, 'nyu', 'labels'))
     # produce a table per run_tag for predictions
     if nyu_rows_pred_all:
-        tags = sorted({(r.get('run_tag') or 'pred') for r in nyu_rows_pred_all})
+        tags = sorted({r.get('run_tag') for r in nyu_rows_pred_all if r.get('run_tag')})
         for tg in tags:
-            rows_t = [r for r in nyu_rows_pred_all if (r.get('run_tag') or 'pred') == tg]
+            rows_t = [r for r in nyu_rows_pred_all if r.get('run_tag') == tg]
             if rows_t:
                 rows_sorted = sorted(rows_t, key=lambda r: float(r['threshold']))
                 tex.append("\n% ---\n")
@@ -66,9 +70,9 @@ def main():
         tex.append("\n% ---\n")
         tex.append(format_table(kitti_sorted, 'kitti', 'labels'))
     if kitti_rows_pred_all:
-        tags = sorted({(r.get('run_tag') or 'pred') for r in kitti_rows_pred_all})
+        tags = sorted({r.get('run_tag') for r in kitti_rows_pred_all if r.get('run_tag')})
         for tg in tags:
-            rows_t = [r for r in kitti_rows_pred_all if (r.get('run_tag') or 'pred') == tg]
+            rows_t = [r for r in kitti_rows_pred_all if r.get('run_tag') == tg]
             if rows_t:
                 rows_sorted = sorted(rows_t, key=lambda r: float(r['threshold']))
                 tex.append("\n% ---\n")

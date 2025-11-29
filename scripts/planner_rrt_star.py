@@ -40,6 +40,7 @@ def rrt_star(
     neighbor_radius: float = 6.0,
     goal_sample_rate: float = 0.05,
     rng: Optional[np.random.Generator] = None,
+    return_tree: bool = False,
 ) -> Tuple[List[Coord], dict]:
     """
     Simple RRT* on an occupancy grid, in grid coordinates.
@@ -114,7 +115,15 @@ def rrt_star(
 
     if goal_idx is None:
         reason = "timeout_rrtstar" if hit_timeout else "no_path"
-        return [], {"success": False, "reason": reason, "time_ms": t_ms}
+        info = {"success": False, "reason": reason, "time_ms": t_ms}
+        if return_tree:
+            info["tree_nodes"] = [tuple(map(float, n)) for n in nodes]
+            info["tree_edges"] = [
+                (int(p), int(i))
+                for i, p in parent.items()
+                if p is not None
+            ]
+        return [], info
 
     # reconstruct
     path: List[Coord] = []
@@ -131,7 +140,20 @@ def rrt_star(
         rr = np.clip(np.round(np.array([p[0] for p in path])).astype(int), 0, occ.shape[0]-1)
         cc = np.clip(np.round(np.array([p[1] for p in path])).astype(int), 0, occ.shape[1]-1)
         path_cost_sum = float(np.sum(cost[rr, cc]))
-    return path, {"success": True, "time_ms": t_ms, "path_length_cells": path_len, "path_cost_sum": path_cost_sum}
+    info = {
+        "success": True,
+        "time_ms": t_ms,
+        "path_length_cells": path_len,
+        "path_cost_sum": path_cost_sum,
+    }
+    if return_tree:
+        info["tree_nodes"] = [tuple(map(float, n)) for n in nodes]
+        info["tree_edges"] = [
+            (int(p), int(i))
+            for i, p in parent.items()
+            if p is not None
+        ]
+    return path, info
 
 
 def plan_with_inflation(
@@ -148,6 +170,7 @@ def plan_with_inflation(
     goal_radius: float = 3.0,
     neighbor_radius: float = 6.0,
     goal_sample_rate: float = 0.05,
+    return_tree: bool = False,
 ):
     occ = costmap >= threshold
     occ = inflate_obstacles(occ, inflation_radius)
@@ -165,4 +188,5 @@ def plan_with_inflation(
         neighbor_radius=neighbor_radius,
         goal_sample_rate=goal_sample_rate,
         rng=rng,
+        return_tree=return_tree,
     )
