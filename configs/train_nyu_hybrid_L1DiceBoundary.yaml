@@ -1,5 +1,5 @@
 # configs/train_nyu_hybrid.yaml
-out_dir: runs/nyu_hybrid
+out_dir: runs/nyu_hybrid_L1DiceBoundary
 data_root: data/processed
 dataset: nyu
 batch_size: 12

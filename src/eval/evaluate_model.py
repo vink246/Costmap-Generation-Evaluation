@@ -1,10 +1,11 @@
 import argparse
 import importlib
+import json
 import torch
 from torch.utils.data import DataLoader
 from src.data.dataset_npz import CostmapPairsNPZ
 from src.train.metrics import mae, iou_binary, precision_recall_f1
-
+import torch.nn.functional as F
 
 def main():
     ap = argparse.ArgumentParser()
@@ -13,11 +14,20 @@ def main():
     ap.add_argument('--dataset', choices=['nyu', 'kitti'], default='nyu')
     ap.add_argument('--batch_size', type=int, default=16)
     ap.add_argument('--num_workers', type=int, default=4)
+
+    # MODEL SELECTION (defaults remain UNet, but you can override for Hybrid)
     ap.add_argument('--model_module', default='src.models.unet')
     ap.add_argument('--model_class', default='UNet')
+
+    # Legacy convenience args (still work for UNet or any model that accepts them)
     ap.add_argument('--in_channels', type=int, default=4)
     ap.add_argument('--out_channels', type=int, default=1)
     ap.add_argument('--base_channels', type=int, default=32)
+
+    # NEW: arbitrary kwargs as JSON, e.g.
+    # --model_kwargs '{"in_channels":4,"out_channels":1,"base":32,"tf_layers":2,"tf_heads":4,"tf_mlp":2.0}'
+    ap.add_argument('--model_kwargs', type=str, default='')
+
     args = ap.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -25,9 +35,24 @@ def main():
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
     ModelClass = getattr(importlib.import_module(args.model_module), args.model_class)
-    model = ModelClass(in_channels=args.in_channels, out_channels=args.out_channels, base_channels=args.base_channels)
+
+    # Build kwargs for the model
+    if args.model_kwargs:
+        try:
+            model_kwargs = json.loads(args.model_kwargs)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Could not parse --model_kwargs JSON: {e}")
+    else:
+        # Fallback for older models that use these names
+        model_kwargs = dict(
+            in_channels=args.in_channels,
+            out_channels=args.out_channels,
+            base_channels=args.base_channels,  # OK for UNet; Hybrid ignores it if not in signature
+        )
+
+    model = ModelClass(**model_kwargs)
     ckpt = torch.load(args.checkpoint, map_location=device)
-    model.load_state_dict(ckpt['model'])
+    model.load_state_dict(ckpt['model'], strict=True)
     model.to(device)
     model.eval()
 
@@ -37,15 +62,21 @@ def main():
         for img, cm in dl:
             img = img.to(device)
             cm = cm.to(device)
-            pred_full = model(img)
+
+            pred_full = model(img)  # may already be probs (0..1) or logits
             if pred_full.shape[-2:] != cm.shape[-2:]:
-                pred = torch.nn.functional.interpolate(pred_full, size=cm.shape[-2:], mode='bilinear', align_corners=False)
+                pred_full = F.interpolate(pred_full, size=cm.shape[-2:], mode='bilinear', align_corners=False)
+
+            # Only apply sigmoid if necessary
+            # (Hybrid returns sigmoid already; UNet may return logits)
+            if torch.isfinite(pred_full).all() and (pred_full.min() >= 0.0) and (pred_full.max() <= 1.0):
+                pred_prob = pred_full
             else:
-                pred = pred_full
-            pred_sig = torch.sigmoid(pred)
-            m_mae += mae(pred_sig, cm)
-            m_iou += iou_binary(pred_sig, cm)
-            p, r, f1 = precision_recall_f1(pred_sig, cm)
+                pred_prob = torch.sigmoid(pred_full)
+
+            m_mae += mae(pred_prob, cm)
+            m_iou += iou_binary(pred_prob, cm)
+            p, r, f1 = precision_recall_f1(pred_prob, cm)
             m_p += p; m_r += r; m_f1 += f1
             n += 1
 
@@ -53,13 +84,12 @@ def main():
         print('No samples found')
         return
     print({
-        'mae': m_mae/n,
-        'iou': m_iou/n,
-        'precision': m_p/n,
-        'recall': m_r/n,
-        'f1': m_f1/n,
+        'mae': (m_mae/n).item() if torch.is_tensor(m_mae) else m_mae/n,
+        'iou': (m_iou/n).item() if torch.is_tensor(m_iou) else m_iou/n,
+        'precision': (m_p/n).item() if torch.is_tensor(m_p) else m_p/n,
+        'recall': (m_r/n).item() if torch.is_tensor(m_r) else m_r/n,
+        'f1': (m_f1/n).item() if torch.is_tensor(m_f1) else m_f1/n,
     })
-
 
 if __name__ == '__main__':
     main()
