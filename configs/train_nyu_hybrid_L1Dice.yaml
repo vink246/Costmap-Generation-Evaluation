@@ -1,5 +1,5 @@
 # configs/train_nyu_hybrid.yaml
-out_dir: runs/nyu_hybrid
+out_dir: runs/nyu_hybrid_L1Dice
 data_root: data/processed
 dataset: nyu
 batch_size: 12
@@ -17,5 +17,5 @@ model_kwargs:
 lr: 0.0008
 loss_weights:
   l1: 1.0
-  dice: 0.5
-  boundary: 0.1
+  dice: 1.0
+  boundary: 0.0

@@ -127,6 +127,7 @@ class HybridCNNTransformer(nn.Module):
         super().__init__()
         self.out_size = out_size
         self.add_uncertainty = add_uncertainty
+        self.in_channels = in_channels
 
         # Encoder
         self.enc1 = ConvBlock(in_channels, base, down=False)      # 256x256
@@ -153,6 +154,15 @@ class HybridCNNTransformer(nn.Module):
             self.unc_head = nn.Conv2d(base, 1, kernel_size=1)
 
     def forward(self, x):
+        # x: B x C x H x W, data is always RGBD (C=4), but model may be RGB-only (in_channels=3)
+        if x.shape[1] > self.in_channels:
+            # drop extra channels (e.g., drop depth for RGB-only)
+            x = x[:, :self.in_channels, ...]
+        elif x.shape[1] < self.in_channels:
+            # pad zeros if we ever had fewer channels than expected
+            pad_c = self.in_channels - x.shape[1]
+            x = torch.cat([x, x.new_zeros(x.shape[0], pad_c, *x.shape[2:])], dim=1)
+            
         # Encoder
         s1 = self.enc1(x)                    # 256
         s2 = self.enc2(s1)                   # 128
