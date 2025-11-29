@@ -1,0 +1,24 @@
+\begin{table}[h]
+  \centering
+  \caption{ViT modality ablation at $\tau=0.5$. RGBD vs RGB-only across NYU and KITTI datasets.}
+  \label{tab:vit_modality_metrics}
+  \begin{tabular}{llcccc}
+    \toprule
+    Dataset & Metric & ViT RGBD & ViT RGB & $\Delta$ (RGBD - RGB) & Note \\ 
+    \midrule
+    \multirow{5}{*}{NYU} 
+      & MAE $\downarrow$ & 0.0019 & 0.0032 & -0.0013 & RGBD: 41\% lower \\
+      & IoU $\uparrow$ & 0.9939 & 0.9957 & -0.0018 & RGB marginally better \\
+      & Precision & 0.9963 & 0.9971 & -0.0008 & RGB marginally better \\
+      & Recall & 0.9976 & 0.9985 & -0.0009 & RGB marginally better \\
+      & F1 & 0.9970 & 0.9978 & -0.0008 & RGB marginally better \\
+    \midrule
+    \multirow{5}{*}{KITTI} 
+      & MAE $\downarrow$ & 0.1694 & 0.1988 & -0.0294 & RGBD: 14.8\% lower \\
+      & IoU $\uparrow$ & 0.5397 & 0.5204 & +0.0193 & RGBD: 3.7\% higher \\
+      & Precision & 0.6996 & 0.6344 & +0.0652 & RGBD: 10.3\% higher \\
+      & Recall & 0.6238 & 0.6951 & -0.0713 & RGB: 11.4\% higher \\
+      & F1 & 0.6543 & 0.6584 & -0.0041 & Nearly identical \\
+    \bottomrule
+  \end{tabular}
+\end{table}
