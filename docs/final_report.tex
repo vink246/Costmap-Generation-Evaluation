@@ -64,6 +64,9 @@ Prior work has focused on learning traversability or BEV maps from vision and co
 \subsection{Model Architectures}
 We evaluate three families with a common lightweight decoder: UNet (encoder--decoder with skip connections), ViT (patch embedding + transformer encoder + convolutional upsampling), and Hybrid (CNN stem with transformer bottleneck). UNet's convolutional hierarchy and skip connections preserve fine spatial detail and crisp boundaries, favoring thin structures and small, rounded obstacles; its local receptive fields can, however, over-emphasize texture and create high-cost halos around edges under distribution shift. ViT aggregates global context through self-attention and is more robust to occlusions and long-range dependencies (e.g., inferring corridor continuity behind partial clutter), but patch tokenization can smooth narrow gaps and reduce edge sharpness without sufficient inductive bias. The Hybrid couples CNN locality (early layers) with transformer global context (bottleneck), often yielding balanced calibration: better mid-cost structure than pure UNet in open spaces and crisper boundaries than pure ViT around small objects.
 
+\paragraph{Hybrid CNN--Transformer (Ibrahim).}
+The Hybrid backbone is implemented as a compact encoder with a convolutional stem and a transformer bottleneck operating on a reduced spatial grid. Concretely, the stem applies 3--4 strided convolutional stages (e.g., channels 32$\rightarrow$64$\rightarrow$128) with Conv--BN--ReLU blocks and stride-2 downsampling, producing a mid-level feature map $f \in \mathbb{R}^{B\times C\times H\times W}$ (typically $H=W=16$ for $256\times256$ inputs). This feature map is flattened into $HW$ tokens of dimension $C$ and passed through a shallow transformer encoder (2--4 self-attention layers with $d_{\text{model}}{=}256$, 4 heads, MLP ratio $\approx 2$ and 2D sinusoidal positional encodings). The transformer refines global context---resolving long corridors, large open regions, and occluded paths---while the convolutional stem preserves local texture and boundary detail. The tokens are then reshaped back to $B\times C\times H\times W$ and fed into a lightweight decoder shared with the other models: a stack of upsampling blocks (nearest/bilinear upsample + $3{\times}3$ conv) restores $64\times64$ resolution, followed by a $1{\times}1$ conv and sigmoid to produce continuous costs in $[0,1]$. This design explicitly targets H2 by combining UNet-style locality with ViT-style global reasoning at similar parameter counts.
+
 \subsection{Architecture Pseudocode}
 Algorithm~\ref{alg:architectures} summarizes the forward pass templates that implement the three perception backbones. Each variant reuses the shared decoder and loss functions described later; the only differences are in how features are encoded before fusion/upsampling.
 
@@ -121,11 +124,16 @@ We use KITTI Raw (outdoor) and NYU Depth v2 (indoor) and convert each to supervi
 We evaluate models using Precision-Recall (PR) curves across thresholds $\tau \in [0.05, 0.95]$ and compute Area Under the PR Curve (AUPRC) as a threshold-agnostic performance metric. The ViT RGBD model achieves AUPRC of 0.743 on NYU and 0.458 on KITTI. PR curves (Appendix~\ref{app:modality_metrics}, Figure~\ref{fig:pr_curves_modality}) show the model maintains high precision across the full recall range on NYU (indoor), while KITTI (outdoor) exhibits steeper precision degradation as recall increases, reflecting greater scene complexity and depth sparsity.
 
 \paragraph{Threshold selection.} For navigation safety, false negatives (missed obstacles) are catastrophic while false positives merely reduce efficiency. F1-vs-Threshold analysis (Figure~\ref{fig:f1_threshold_modality}) reveals peak F1 at $\tau \approx 0.2$--0.4 for KITTI. We report perception metrics at the standard $\tau = 0.5$ for comparison with prior work, and sweep $\tau \in \{0.4, 0.5, 0.6\}$ for planner evaluation to assess deployment robustness.
+
 \subsection{Perception Metrics}
 \input{tables/perception_tables.tex}
 \FloatBarrier
 ViT leads NYU (IoU $\approx$0.975, F1 $\approx$0.987); Hybrid leads KITTI IoU (0.527). Transfer (NYU$\rightarrow$KITTI) improves UNet F1 and IoU, suggesting cross-domain pretraining benefits outdoor scenes. An RGB-only NYU ablation reduces IoU/F1 modestly (\~2--3 points) yet retains high F1 (\~0.956), indicating that indoor geometry is sufficiently regular for RGB to carry significant information---we revisit planner impact below.
+
 \paragraph{Architecture-grounded analysis.} Indoors (NYU), global layout and long corridors reward ViT's long-range reasoning: attention preserves room-scale consistency and reduces false positives in mid-range clutter, lifting IoU/F1. UNet excels at boundary fidelity and small/round obstacles (thanks to skip connections), typically yielding sharper edges but slightly lower global calibration; this aligns with its competitive precision and occasional recall drop on thin free-space ribbons. Outdoors (KITTI), the Hybrid benefits from CNN locality for textured facades/ground while leveraging transformer context to disambiguate occluded paths across larger fields of view, explaining its IoU lead. Qualitatively, ViT tends to smooth very narrow gaps, UNet can produce high-cost halos around edges under shift, and Hybrid balances these effects, maintaining mid-cost gradients that later support planner connectivity.
+
+\paragraph{Hybrid model performance (H2).}
+On NYU, the Hybrid RGBD model closely tracks ViT in pixel metrics (IoU $\approx 0.968$, F1 $\approx 0.984$), confirming that a shallow transformer bottleneck on top of a CNN stem is sufficient to capture the global indoor layout while preserving local detail. On KITTI, the Hybrid achieves the best IoU among the learned models (IoU $\approx 0.53$ at $\tau{=}0.5$), slightly exceeding both UNet and ViT at a comparable parameter budget. Qualitatively, Hybrid predictions exhibit sharper boundaries than ViT and fewer conservative ``halos'' than UNet, which helps maintain mid-cost gradients and free-space connectivity. These results partially validate H2: augmenting a CNN stem with a lightweight transformer bottleneck improves outdoor calibration and IoU relative to a pure UNet, while remaining competitive with a full ViT encoder in structured indoor scenes.
 
 \subsection{Planner-in-the-Loop Evaluation}\label{sec:planner}
 \input{tables/planner_tables.tex}
@@ -167,7 +175,6 @@ To provide a comprehensive evaluation across all decision thresholds, we compare
 Detailed single-point metrics at $\tau=0.5$ are provided in Appendix~\ref{app:modality_metrics} (Table~\ref{tab:vit_modality_metrics}). RGBD reduces MAE on NYU and KITTI and improves precision/IoU, while RGB sometimes shows higher recall/F1 at $\tau=0.5$. This behavior reflects a precision–recall trade-off and different optimal thresholds, underscoring that AUPRC better captures overall performance and that RGBD produces safer, more confident costmaps.
 These results confirm H1: RGBD lowers MAE, boosts AUPRC, and resolves visual ambiguities, making it the preferred choice for safe navigation.
 
-
 \subsubsection{Cross-Domain Generalization}
 \input{tables/unet_cross_domain_tables.tex}
 \FloatBarrier
@@ -184,6 +191,8 @@ ViT transfer results reveal strong asymmetry: KITTI$\rightarrow$NYU zero-shot fa
 \FloatBarrier
 On NYU the three losses differ by less than 0.3 F1 points—L1-only delivers the best MAE ($0.0104$) and essentially matches L1+Dice. On KITTI, however, Dice improves recall (0.655 vs 0.558) at the expense of higher MAE, and the boundary term is required to recover precision, raising IoU from $0.413$ to $0.489$ and F1 from $0.568$ to $0.647$. These results validate H3: overlap/boundary terms are critical for cluttered outdoor scenes, while the smoother indoor labels can be learned with a simple L1 objective.
 
+\paragraph{Hybrid objective ablation (NYU, Ibrahim).}
+We repeated the objective ablation for the Hybrid encoder on NYU using three loss variants: L1-only, L1+Dice, and L1+Dice+Boundary. The L1-only model achieved MAE $0.0167$ with IoU $0.947$ and F1 $0.973$, essentially matching the composite objectives. Adding Dice increased overlap regularization but slightly degraded calibration (MAE $0.0281$, IoU $0.894$, F1 $0.944$), and the full L1+Dice+Boundary combination further emphasized edges at the cost of higher MAE and lower IoU/F1 (MAE $0.0337$, IoU $0.877$, F1 $0.934$). These trends mirror the UNet and ViT results indoors: the NYU label surface is smooth and well-behaved, so a simple L1 objective is sufficient even for the Hybrid model. H3 is therefore most strongly supported in the cluttered outdoor regime (KITTI), where overlap- and boundary-aware losses are needed to sharpen thin obstacles; indoors, Hybrid behaves like the other architectures and does not benefit from additional objective terms.
 
 For ViT (Appendix~\ref{app:objective_table}, Table~\ref{tab:vit_objective_ablation}): Across NYU, all losses achieve near-perfect F1, with L1-only giving the best MAE and precision, indicating minimal regularization is needed indoors. On KITTI, adding Dice and Boundary offers small but consistent gains in IoU and precision, improving thin-obstacle delineation despite similar F1 scores. Overall, segmentation-aware losses help sharpen boundaries when geometric cues dominate.
 
@@ -191,6 +200,9 @@ For ViT (Appendix~\ref{app:objective_table}, Table~\ref{tab:vit_objective_ablati
 \input{tables/robustness_table.tex}
 \FloatBarrier
 The classical depth baseline is almost invariant to brightness and blur because it operates directly on normalized depth, though perspective jitter reduces NYU F1 by 0.15. The learned RGBD UNet is markedly more brittle: darkening or blurring NYU inputs removes $\approx$0.23 F1/0.35 IoU, and the same perturbations on KITTI remove $\approx$0.58 F1/0.45 IoU. Perspective jitter also erodes KITTI F1 by 0.57. These observations motivate the integration of photometric augmentation and/or depth-only auxiliary heads if the learned costmaps are to match the heuristic pipeline's stability in the wild.
+
+\subsubsection{Hybrid profiling: parameters, FLOPs, and latency (Ibrahim)}
+To ground H3 in computational terms, we profiled the Hybrid CNN--Transformer using a dedicated profiling script on a $256\times256$ RGBD input (batch size 1). Using \texttt{thop}, the model has approximately $3.78$M trainable parameters and $\approx 15.5$ GFLOPs per forward pass at this resolution. On our CPU-only setup (Apple M-series laptop, single core), the Hybrid achieves an average latency of $\approx 109$\,ms per frame after warmup. These numbers place the Hybrid between the UNet and ViT in complexity: it is heavier than a pure UNet but significantly lighter than a full ViT encoder with comparable spatial resolution. On a modern GPU, this cost would drop to the single-digit millisecond range, indicating that the Hybrid is feasible for near-real-time use in a local planner loop, provided that perception is amortized over multiple planning steps or run at a lower input resolution.
 
 \subsection{Qualitative Visualizations}
 Representative panels (RGB, depth, ground-truth, predicted costmap) are shown in Figure~\ref{fig:qual_nyu_rgbd}; our visualization utility renders the modalities side-by-side to highlight residual errors. Additional sequences, modality ablations, and KITTI panels are collected in Appendix~\ref{app:qual_panels} to keep the main narrative concise.
@@ -224,7 +236,7 @@ Future work entails exploring a start/goal-aware training curricula that bias su
     Member & Technical contributions \\
     \midrule
     Rut Santana & Data pipeline; processed pairs; configs; planner eval (A*/RRT*); modality ablation; report assembly; reproducibility orchestration. \\
-    Ibrahim Alshayeb & Hybrid model design/implementation; NYU/KITTI training; profiling; loss ablations. \\
+    Ibrahim Alshayeb & Hybrid model design/implementation; NYU/KITTI Hybrid training (RGBD and RGB-only variants); Hybrid loss ablations; Hybrid profiling (parameters/FLOPs/latency). \\
     Vineet Kulkarni & Classical depth baseline; UNet training (NYU/KITTI + transfer); robustness tests; baseline vs learned comparison. \\
     Meera Ranjan & ViT implementation and training; PR curves/calibration; cross-domain experiments; qualitative panels. \\
     \bottomrule
