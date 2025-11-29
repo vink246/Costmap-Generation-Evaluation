@@ -1,11 +1,4 @@
-\begingroup
-\setlength{\tabcolsep}{5pt}
-\renewcommand{\arraystretch}{0.95}
-\newcommand{\plannerTableGap}{\vspace{-0.35em}\noindent}
-
-\noindent
-
-\begin{table}[!htbp]
+\begin{table}[H]
   \centering
   \caption{NYU planner-in-the-loop results across thresholds (both planners, source=labels).}
   \label{tab:nyu_planner_labels}
@@ -28,8 +21,87 @@
 % ---
 
 
-\plannerTableGap
-\begin{table}[!htbp]
+\begin{table}[H]
+  \centering
+  \caption{NYU planner-in-the-loop results across thresholds (both planners, source=pred, pred).}
+  \label{tab:nyu_planner_pred_pred}
+  \begin{tabular}{lcccccc}
+    \toprule
+    thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
+    \midrule
+    0.4 & 0.969 & 0.969 & 17.998 & 14.340 & 132.154 & 152.998 \\
+    0.5 & 0.977 & 0.977 & 17.385 & 13.626 & 124.725 & 145.659 \\
+    0.6 & 0.992 & 0.992 & 23.884 & 15.275 & 132.263 & 152.573 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+
+% ---
+
+
+\begin{table}[H]
+  \centering
+  \caption{NYU planner-in-the-loop results across thresholds (both planners, source=pred, unet_rgb).}
+  \label{tab:nyu_planner_pred_unet_rgb}
+  \begin{tabular}{lcccccc}
+    \toprule
+    thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
+    \midrule
+    0.4 & 0.794 & 0.794 & 1.099 & 40.396 & 34.702 & 41.121 \\
+    0.5 & 0.809 & 0.809 & 0.874 & 44.351 & 27.927 & 34.212 \\
+    0.6 & 0.885 & 0.885 & 1.185 & 35.273 & 32.800 & 41.069 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+
+% ---
+
+
+\begin{table}[H]
+  \centering
+  \caption{NYU planner-in-the-loop results across thresholds (both planners, source=pred, vit).}
+  \label{tab:nyu_planner_pred_vit}
+  \begin{tabular}{lcccccc}
+    \toprule
+    thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
+    \midrule
+    0.4 & 0.725 & 0.725 & 2.058 & 140.239 & 29.347 & 35.230 \\
+    0.5 & 0.916 & 0.916 & 2.354 & 47.238 & 30.574 & 37.883 \\
+    0.6 & 0.924 & 0.924 & 2.958 & 55.742 & 34.533 & 42.762 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+
+% ---
+
+
+\begin{table}[H]
+  \centering
+  \caption{NYU planner-in-the-loop results across thresholds (both planners, source=pred, vit_rgb).}
+  \label{tab:nyu_planner_pred_vit_rgb}
+  \begin{tabular}{lcccccc}
+    \toprule
+    thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
+    \midrule
+    0.4 & 0.809 & 0.809 & 0.732 & 28.417 & 29.660 & 35.087 \\
+    0.5 & 0.809 & 0.809 & 1.072 & 50.998 & 33.721 & 41.450 \\
+    0.6 & 0.924 & 0.924 & 1.070 & 20.453 & 31.565 & 39.781 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+
+% ---
+
+
+\begin{table}[H]
   \centering
   \caption{NYU planner-in-the-loop results across thresholds (both planners, source=pred, \texttt{vit\_rgbd}).}
   \label{tab:nyu_planner_pred_vit_rgbd}
@@ -49,8 +121,7 @@
 % ---
 
 
-\plannerTableGap
-\begin{table}[!htbp]
+\begin{table}[H]
   \centering
   \caption{KITTI planner-in-the-loop results across thresholds (both planners, source=labels).}
   \label{tab:kitti_planner_labels}
@@ -58,9 +129,12 @@
     \toprule
     thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
     \midrule
-    0.4 & 0.695 & 0.695 & 0.797 & 38.141 & 28.148 & 33.957 \\
-    0.5 & 0.831 & 0.831 & 0.984 & 29.745 & 30.319 & 37.080 \\
-    0.6 & 0.836 & 0.836 & 1.037 & 36.799 & 30.777 & 37.876 \\
+    0.4 & 0.695 & 0.695 & 0.779 & 35.710 & 28.148 & 33.957 \\
+    0.4 & 0.000 & 0.000 & 0.000 & 21.647 & 0.000 & 0.000 \\
+    0.5 & 0.831 & 0.831 & 0.934 & 28.532 & 30.319 & 37.080 \\
+    0.5 & 0.000 & 0.000 & 0.000 & 21.956 & 0.000 & 0.000 \\
+    0.6 & 0.836 & 0.836 & 1.027 & 35.271 & 30.777 & 37.876 \\
+    0.6 & 0.848 & 0.848 & 0.999 & 47.670 & 31.816 & 39.426 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -70,8 +144,27 @@
 % ---
 
 
-\plannerTableGap
-\begin{table}[!htbp]
+\begin{table}[H]
+  \centering
+  \caption{KITTI planner-in-the-loop results across thresholds (both planners, source=pred, pred).}
+  \label{tab:kitti_planner_pred_pred}
+  \begin{tabular}{lcccccc}
+    \toprule
+    thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
+    \midrule
+    0.4 & 0.000 & 0.000 & 0.000 & 24.072 & 0.000 & 0.000 \\
+    0.5 & 0.000 & 0.000 & 0.000 & 23.680 & 0.000 & 0.000 \\
+    0.6 & 0.000 & 0.000 & 0.000 & 24.128 & 0.000 & 0.000 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+
+% ---
+
+
+\begin{table}[H]
   \centering
   \caption{KITTI planner-in-the-loop results across thresholds (both planners, source=pred, \texttt{unet\_rgbd\_retrain}).}
   \label{tab:kitti_planner_pred_unet_rgbd_retrain}
@@ -79,11 +172,73 @@
     \toprule
     thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
     \midrule
-    0.4 & 0.734 & 0.734 & 0.730 & 36.651 & 26.309 & 31.672 \\
-    0.5 & 0.797 & 0.797 & 0.860 & 38.520 & 27.781 & 34.053 \\
-    0.6 & 0.843 & 0.841 & 1.112 & 40.675 & 31.687 & 38.756 \\
+    0.4 & 0.734 & 0.734 & 0.680 & 32.399 & 26.309 & 31.672 \\
+    0.5 & 0.797 & 0.797 & 0.796 & 33.376 & 27.781 & 34.053 \\
+    0.5 & 0.625 & 0.625 & 1.037 & 60.899 & 31.762 & 39.227 \\
+    0.6 & 0.843 & 0.841 & 1.023 & 36.366 & 31.687 & 38.756 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\endgroup
+
+
+% ---
+
+
+\begin{table}[H]
+  \centering
+  \caption{KITTI planner-in-the-loop results across thresholds (both planners, source=pred, unet_rgbd_retrain_full).}
+  \label{tab:kitti_planner_pred_unet_rgbd_retrain_full}
+  \begin{tabular}{lcccccc}
+    \toprule
+    thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
+    \midrule
+    0.4 & 0.560 & 0.560 & 0.673 & 53.791 & 28.220 & 33.222 \\
+    0.4 & 0.543 & 0.540 & 0.677 & 44.019 & 28.151 & 32.378 \\
+    0.5 & 0.730 & 0.730 & 0.947 & 47.845 & 32.639 & 40.864 \\
+    0.5 & 0.644 & 0.642 & 1.147 & 49.403 & 34.488 & 41.477 \\
+    0.6 & 0.840 & 0.840 & 1.304 & 77.461 & 35.317 & 43.607 \\
+    0.6 & 0.794 & 0.785 & 1.289 & 48.685 & 35.649 & 43.176 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+
+% ---
+
+
+\begin{table}[H]
+  \centering
+  \caption{KITTI planner-in-the-loop results across thresholds (both planners, source=pred, vit_rgb).}
+  \label{tab:kitti_planner_pred_vit_rgb}
+  \begin{tabular}{lcccccc}
+    \toprule
+    thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
+    \midrule
+    0.4 & 0.423 & 0.409 & 0.441 & 34.453 & 30.339 & 31.101 \\
+    0.5 & 0.695 & 0.695 & 0.800 & 38.357 & 33.668 & 38.549 \\
+    0.6 & 0.827 & 0.827 & 1.041 & 42.124 & 32.845 & 40.085 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+
+% ---
+
+
+\begin{table}[H]
+  \centering
+  \caption{KITTI planner-in-the-loop results across thresholds (both planners, source=pred, vit_rgbd).}
+  \label{tab:kitti_planner_pred_vit_rgbd}
+  \begin{tabular}{lcccccc}
+    \toprule
+    thr & succ(A*) & succ(RRT*) & t(A*) [ms] & t(RRT*) [ms] & len(A*) & len(RRT*) \\ 
+    \midrule
+    0.4 & 0.656 & 0.656 & 0.679 & 39.647 & 29.228 & 33.721 \\
+    0.5 & 0.797 & 0.797 & 0.830 & 39.834 & 29.753 & 36.047 \\
+    0.6 & 0.838 & 0.838 & 1.036 & 48.386 & 32.370 & 39.723 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

@@ -164,7 +164,7 @@ Tables~\ref{tab:nyu_planner_labels}--\ref{tab:kitti_planner_pred_unet_rgbd_retra
 \subsection{Ablation and Robustness Studies}
 \subsubsection{Modality Ablation (H1): RGB vs RGBD}
 
-We hypothesize (H1) that providing depth information alongside RGB channels will lead to more accurate and reliable costmap generation compared to RGB-only models.
+Table~\ref{tab:nyu_results} and Table~\ref{tab:kitti_results} compare UNet with RGB-only versus RGBD inputs. On NYU, removing depth degrades IoU/F1 by only $\sim$2--3 points (F1 0.9588 vs 0.9566), suggesting that indoor geometry regularity allows RGB texture and structure to capture sufficient traversability cues. On KITTI, RGB-only achieves similar F1 (0.6501 vs 0.6384) but with higher MAE (0.2702 vs 0.2083) and lower precision (0.5778 vs 0.6148), indicating depth is more critical for accurate outdoor cost calibration. Critically, planner success reveals a larger gap: RGB-only NYU predictions drop success from $\geq$0.969 to 0.79--0.89, showing that while pixel-wise metrics remain competitive, the loss of depth information flattens intermediate cost gradients that govern free-space connectivity after binarization. These results validate H1: RGBD improves planning-relevant calibration over RGB-only, particularly for outdoor scenes.
 
 \paragraph{AUPRC Analysis.}
 
@@ -225,11 +225,9 @@ We presented a unified pipeline for learning continuous costmaps from RGBD and e
 
 Limitations include: (1) the depth-derived label heuristic emphasizes global gradients and may miss thin obstacles; (2) KITTI exhibits threshold sensitivity and residual miscalibration; (3) collision counts are implicit via planner failures rather than reported explicitly. Recommendations for deployment include data-driven threshold tuning with inflation radius 2, light morphological post-processing, and maintaining inference guardrails (distribution logging and degeneracy checks) to ensure usable predictions.
 
-Future work entails exploring a start/goal-aware training curricula that bias supervision toward the sampling distribution used by planners, boundary-refinement heads or auxiliary contour losses to tighten KITTI calibration without inflating conservative halos, and validation on hardware by coupling the learned costmaps to a low-speed rover or indoor mobile base. These extensions remain compatible with the existing pipeline and would directly test transfer to real robots.
-
-\section{Team Contributions}
-\vspace{-0.5em}
-\begin{center}
+\section*{Team Contributions}
+\begin{table}[H]
+  \centering
   \small
   \begin{tabular}{p{0.18\linewidth}p{0.76\linewidth}}
     \toprule
