@@ -1,5 +1,5 @@
-out_dir: runs/nyu_vit_rgb
-data_root: data/processed
+out_dir: /home/hice1/mranjan9/scratch/mranjan9/runs/nyu_vit_rgb
+data_root: /home/hice1/mranjan9/scratch/mranjan9/data/processed
 dataset: nyu
 batch_size: 32
 epochs: 50
@@ -8,6 +8,7 @@ model_module: src.models.vit
 model_class: ViT
 dataset_kwargs:
   channels: rgb
+rgb_only: true
 model_kwargs:
   in_channels: 3
   out_channels: 1

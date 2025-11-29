@@ -109,6 +109,12 @@ Dependencies are pinned via a requirements specification, and we ship Python ent
 We use KITTI Raw (outdoor) and NYU Depth v2 (indoor) and convert each to supervised pairs with a unified format. Processed splits contain NYU 523/131 and KITTI 438/433 train/val examples. Inputs are RGBD images resized to $256\times256$ and normalized channelwise using dataset statistics; targets are continuous costmaps in $[0,1]$ at $64\times64$ resolution. The label heuristic thresholds depth to identify obstacles, inflates by a disk approximating robot footprint, and applies a distance transform with min--max normalization, yielding a smooth traversability field. A shared configuration manifest defines the train/validation roots, ensuring both datasets follow identical preprocessing and storage conventions.
 
 \section{Experiments and Results}
+\subsection{Threshold Calibration and Evaluation Framework}
+\label{sec:threshold_calibration}
+
+We evaluate models using Precision-Recall (PR) curves across thresholds $\tau \in [0.05, 0.95]$ and compute Area Under the PR Curve (AUPRC) as a threshold-agnostic performance metric. The ViT RGBD model achieves AUPRC of 0.743 on NYU and 0.458 on KITTI. PR curves (Appendix~\ref{app:modality_metrics}, Figure~\ref{fig:pr_curves_modality}) show the model maintains high precision across the full recall range on NYU (indoor), while KITTI (outdoor) exhibits steeper precision degradation as recall increases, reflecting greater scene complexity and depth sparsity.
+
+\paragraph{Threshold selection.} For navigation safety, false negatives (missed obstacles) are catastrophic while false positives merely reduce efficiency. F1-vs-Threshold analysis (Figure~\ref{fig:f1_threshold_modality}) reveals peak F1 at $\tau \approx 0.2$--0.4 for KITTI. We report perception metrics at the standard $\tau = 0.5$ for comparison with prior work, and sweep $\tau \in \{0.4, 0.5, 0.6\}$ for planner evaluation to assess deployment robustness.
 \subsection{Perception Metrics}
 \input{tables/perception_tables.tex}
 \FloatBarrier
@@ -142,15 +148,38 @@ Tables~\ref{tab:nyu_planner_labels}--\ref{tab:kitti_planner_pred_unet_rgbd_retra
 \paragraph{Discussion.} Planner metrics expose differences obscured by pixel-wise F1/IoU. Modality effects are magnified at the planner level: even small perception deltas can disrupt free-space connectivity. The continuous cost formulation is beneficial, but its calibration must reflect planner needs; in practice we find that (i) preserving dynamic range and mid-cost structure, and (ii) selecting an appropriate binarization threshold with modest inflation are decisive for navigation outcomes. By architecture: UNet is strongest at boundary fidelity and small objects (good for round/thin obstacles) but needs calibration to avoid conservative halos; ViT best preserves global layout and corridor continuity (robust to occlusions) yet can smooth very narrow gaps; Hybrid provides the best balance for mixed-scale outdoor scenes, sustaining connectivity at planner thresholds without sacrificing edge sharpness.
 
 \subsection{Ablation and Robustness Studies}
+\subsubsection{Modality Ablation (H1): RGB vs RGBD}
+
+We hypothesize (H1) that providing depth information alongside RGB channels will lead to more accurate and reliable costmap generation compared to RGB-only models.
+
+\paragraph{AUPRC Analysis}
+
+To provide a comprehensive evaluation across all decision thresholds, we compare the Area Under the Precision-Recall Curve (AUPRC) for both modality variants (Table~\ref{tab:vit_modality_auprc}). The AUPRC results strongly support H1: the addition of depth provides a substantial performance uplift on both datasets, with a \textbf{57.7\% improvement on NYU} and a \textbf{48.3\% improvement on KITTI}.
+\input{tables/vit_modality_auprc.tex}
+\FloatBarrier
+
+Detailed single-point metrics at $\tau=0.5$ are provided in Appendix~\ref{app:modality_metrics} (Table~\ref{tab:vit_modality_metrics}). RGBD reduces MAE on NYU and KITTIand improves precision/IoU, while RGB sometimes shows higher recall/F1 at $\tau=0.5$. This reflects a precision–recall trade-off and different optimal thresholds, highlighting that \textbf{AUPRC better captures overall performance} and that RGBD produces safer, more confident costmaps.
+H1 is confirmed: RGBD lowers MAE, boosts AUPRC and resolves visual ambiguities, making it the preferred choice for safe navigation.
+
+
 \subsubsection{Cross-Domain Generalization}
 \input{tables/unet_cross_domain_tables.tex}
 \FloatBarrier
+
 Fine-tuning a KITTI model on NYU recovers almost all in-domain performance (F1 0.959 vs 0.957) whereas zero-shot deployment collapses to $0.586$ F1 despite similar precision (Table~\ref{tab:unet_cross_domain_nyu}). Outdoors the benefit of adaptation is even larger: NYU$\rightarrow$KITTI transfer lifts IoU/F1 from $(0.480, 0.638)$ to $(0.500, 0.651)$, while zero-shot transfer lags by over eight F1 points (Table~\ref{tab:unet_cross_domain_kitti}). Cross-domain pretraining therefore remains useful, but lightweight fine-tuning is essential for preserving free-space calibration under shifts in texture, depth, and illumination.
+
+\input{tables/vit_cross_domain_tables.tex}
+\FloatBarrier
+
+ViT transfer results reveal strong asymmetry: KITTI$\rightarrow$NYU zero-shot fails (IoU 0.113, -88.6\%), requiring fine-tuning to fully recover performance (Table~\ref{tab:vit_cross_domain_nyu}). In contrast, NYU$\rightarrow$KITTI zero-shot succeeds with near-baseline IoU (0.541 vs 0.540) and fine-tuning adds minimal benefit (Table~\ref{tab:vit_cross_domain_kitti}). This confirms indoor scenes with dense depth provide superior pre-training: the ViT's global attention effectively exploits dense geometric information but fails when depth characteristics mismatch training distributions (sparse LiDAR vs dense RGB-D).
 
 \subsubsection{Objective Ablation (H3)}
 \input{tables/unet_objective_ablation_table.tex}
 \FloatBarrier
 On NYU the three losses differ by less than 0.3 F1 points—L1-only delivers the best MAE ($0.0104$) and essentially matches L1+Dice. On KITTI, however, Dice improves recall (0.655 vs 0.558) at the expense of higher MAE, and the boundary term is required to recover precision, raising IoU from $0.413$ to $0.489$ and F1 from $0.568$ to $0.647$. These results validate H3: overlap/boundary terms are critical for cluttered outdoor scenes, while the smoother indoor labels can be learned with a simple L1 objective.
+
+
+For ViT (Appendix~\ref{app:objective_table}, Table~\ref{tab:vit_objective_ablation}): Across NYU, all losses achieve near-perfect F1, with L1-only giving the best MAE and precision, indicating minimal regularization is needed indoors. On KITTI, adding Dice and Boundary offers small but consistent gains in IoU and precision, improving thin-obstacle delineation despite similar F1 scores. Overall, segmentation-aware losses help sharpen boundaries when geometric cues dominate.
 
 \subsubsection{Robustness to Photometric and Geometric Perturbations}
 \input{tables/robustness_table.tex}
@@ -213,9 +242,39 @@ Concrete next steps include start/goal-aware training curricula that bias superv
 \newpage
 \appendix
 \section*{Appendix}
+
+\subsection*{Modality Ablation: Detailed Metrics}
+\label{app:modality_metrics}
+\input{tables/vit_modality_metrics.tex}
+\FloatBarrier
+
+\subsubsection*{Precision-Recall Curves}
+\label{app:pr_curves}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.48\textwidth]{figures/pr_curves_vit_rgb.png}
+  \includegraphics[width=0.48\textwidth]{figures/pr_curves_vit_rgbd.png}
+  \caption{Precision-Recall curves for ViT RGB (left, AUPRC=0.471/0.309 NYU/KITTI) and ViT RGBD (right, AUPRC=0.743/0.458 NYU/KITTI). RGBD maintains higher precision at equivalent recall levels across both datasets, with particularly strong gains on NYU (+57.7\%).}
+  \label{fig:pr_curves_modality}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.48\textwidth]{figures/f1_threshold_vit_rgb.png}
+  \includegraphics[width=0.48\textwidth]{figures/f1_threshold_vit_rgbd.png}
+  \caption{F1-score vs. Threshold for ViT RGB (left) and ViT RGBD (right). Both models show peak F1 at lower thresholds ($\tau \approx 0.2$--0.4), particularly on KITTI, justifying safety-oriented threshold selection for deployment.}
+  \label{fig:f1_threshold_modality}
+\end{figure}
+\FloatBarrier
+
 \subsection*{Objective Ablation Table}
 \label{app:objective_table}
 \input{tables/unet_objective_ablation_table.tex}
+\FloatBarrier
+
+\label{app:objective_table}
+\input{tables/vit_objective_ablation_table.tex}
 \FloatBarrier
 
 \subsection*{Robustness Table}
